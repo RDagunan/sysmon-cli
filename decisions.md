@@ -6,3 +6,4 @@
 - [2026-11-16] Document the CLI's whole-hour, minute, and second display so contributors can verify its output against the kernel value.
 - [2026-11-16] Read `MemTotal` and `MemAvailable` by name from `/proc/meminfo` and display whole MiB because the file contains many fields reported in kB.
 - [2026-11-20] Calculate aggregate CPU usage from two /proc/stat snapshots about one second apart, treating idle plus iowait as nonbusy and checking differences before division.
+- [2026-11-20] Add optional --watch repetition around print_snapshot, preserving the default single run and reusing the CPU sampling pause to pace updates.

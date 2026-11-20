@@ -252,3 +252,25 @@ The user's screenshot shows a successful build followed by `Error: inconsistent 
 ### Live CPU sampling restored
 
 The user reported uptime 2h:17m:42s, available memory 25631 MiB of 32013 MiB, and CPU usage 1.19197% after cleanup. Source inspection confirms the temporary snapshot assignments are removed and the calculation uses values from the two real reads. Updated the guide and roadmap. The 25% arithmetic and zero-change error tests passed earlier. Other error conditions remain untested. No commit was made in this documentation update.
+
+## Session — 2026-11-20 — Published milestone and next lesson
+
+Commit ee5bc5a records CPU usage sampling and learning documentation. The user created the public RDagunan/sysmon-cli repository and signed in locally. Added origin, pushed main with `git push -u origin main`, and verified GitHub's main ref matched ee5bc5a3ad149b4e8b0f2f61ac70b7c8d825e2bf. Local main tracks origin/main.
+
+On resuming, inspected the source and found live sampling intact with a clean working tree before documentation changes. Proposed an optional --watch feature. Added the first lesson to CODE_GUIDE.md, renaming the current main body to print_snapshot and adding a small main that returns its status. The user will implement this as a learning exercise. Refactoring, argument handling, watch looping, and their verification remain pending.
+
+### Snapshot function refactor passed
+
+The user's screenshot shows a successful build and run after extracting print_snapshot, with uptime 2h:33m:46s, available RAM 24832 MiB of 32013 MiB, CPU usage 1.38018%, and echo $? reporting 0. Source inspection confirms the new entry point delegates to print_snapshot. Added a proposed lesson for argc/argv parsing and a do/while loop, preserving single-run mode and stopping on snapshot errors. The argument and loop edits, execution checks, and invalid-argument handling remain pending.
+
+### Watch mode implemented; verification in progress
+
+Source inspection confirms argc/argv parsing and a do/while loop around print_snapshot. The user's screenshot shows a successful default build/run with CPU 2.19024% and exit status 0. The --watch run shows a complete first snapshot and the beginning of another. Two complete snapshots, Ctrl+C interruption, and invalid-argument exit status remain awaiting confirmation. Added the verification commands and expectations to CODE_GUIDE.md.
+
+### Unknown-option check passed
+
+The user's screenshot shows `./build/sysmon --oops` printing the usage message and the immediately following `echo $?` printing 1. This verifies the unknown-option branch. Confirmation of at least two complete watch snapshots and stopping with Ctrl+C remains pending.
+
+### Watch repetition and Ctrl+C confirmed
+
+The user reported that --watch repeated uptime, memory, and CPU usage and stopped with Ctrl+C. This is user-reported execution evidence. Default-mode exit status 0 and invalid-option exit status 1 already have screenshot evidence. Updated README.md, CODE_GUIDE.md, architecture.md, and decisions.md for the implemented feature. Snapshot-error propagation in the loop remains reviewed in source rather than triggered at runtime. No commit or push was performed during this update.

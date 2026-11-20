@@ -24,6 +24,16 @@ The memory values come from the `MemAvailable` and `MemTotal` fields. They are d
 
 CPU usage appears after a pause of about one second between two reads. It reports the busy fraction across all CPUs over that interval, treating idle plus iowait as nonbusy. Values vary with system activity.
 
+## Watch mode
+
+Run repeated measurements with:
+
+```sh
+./build/sysmon --watch
+```
+
+Each snapshot is appended to the terminal. The existing CPU sampling pause paces updates at roughly one snapshot per second plus processing time. Press Ctrl+C to stop. Running without arguments prints one snapshot. Unknown or extra arguments print `Usage: sysmon [--watch]` and exit with status 1.
+
 ## Where things live
 
 For annotated code snippets and explanations of each step, read [CODE_GUIDE.md](CODE_GUIDE.md).
@@ -32,7 +42,7 @@ For the program's structure, current milestone, and proposed next steps, read [a
 
 | Path | Purpose |
 | --- | --- |
-| [src/main.cpp](src/main.cpp) | Start at `main()` to follow the uptime and memory reads, conversions, and terminal output. |
+| [src/main.cpp](src/main.cpp) | Start at `main()` for argument handling and repetition. `print_snapshot()` reads and displays uptime, memory, and CPU usage. |
 | [CMakeLists.txt](CMakeLists.txt) | Sets the C++ standard and lists the sources for the `sysmon` executable. |
 | `build/` | Generated build files and executable. Git ignores this directory. |
 | `include/sysmon/`, `tests/` | Reserved for project headers and tests. Both are currently empty. |

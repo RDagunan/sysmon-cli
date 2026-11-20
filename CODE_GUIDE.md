@@ -602,3 +602,90 @@ When we add or change code, the assistant will update the matching snippets and 
 ## Live sampling restored after checks
 
 The user reported uptime 2h:17m:42s, available memory 25631 MiB of 32013 MiB, and CPU usage 1.19197% after removing the temporary assignments. Source inspection confirms the four assignments are gone. The 25% and zero-change checks are recorded above. Decreasing or excessive nonbusy changes and file/parse failures still lack runtime evidence.
+
+## Watch-mode lesson 1 — a reusable snapshot
+
+The suggested next feature is an optional `--watch` argument that repeats readings until Ctrl+C. The learner has implemented the reusable print_snapshot function. The user's screenshot demonstrates a successful build, all three live measurements, and exit status 0.
+
+Rename the existing function header `int main()` to:
+
+```cpp
+int print_snapshot() {
+    // Keep the existing uptime, memory, and CPU statements here.
+    // This comment stands for the current body, including its return statements.
+}
+```
+
+The snippet above shows the shape of the function. Retain the full existing body when renaming it. Then add this new entry point after the closing brace of print_snapshot:
+
+```cpp
+int main() {
+    return print_snapshot();
+}
+```
+
+| Part | Meaning and reason |
+| --- | --- |
+| `int print_snapshot()` | Name the operation that reads and displays one set of measurements. Its return value remains an exit-style status, 0 for success or 1 for an error. |
+| Existing body | Retain the file reads, output, one-second CPU pause, error checks, and final return. |
+| New `int main()` | Keep the program's entry point. It now delegates the measurement work to the function. |
+| `return print_snapshot();` | Call the function once and return its result to the shell. If reading fails, main returns the same failure status. |
+
+Define print_snapshot above main so the compiler has seen the definition before the call. After the edit there should be exactly one function named main. Rebuild and run with `cmake --build build && ./build/sysmon`, then immediately run `echo $?`. Expected successful output is the same uptime, memory, and CPU lines followed by status 0. No execution result for this refactor is recorded yet.
+
+The next lesson introduces command-line arguments and a loop that repeats print_snapshot only when --watch is selected. Each snapshot already includes the CPU sampling pause.
+
+## Watch-mode lesson 2 — arguments and repetition
+
+The learner has added the argument parser and loop. The user's screenshot shows the default run returning 0 and --watch beginning a second snapshot. The unknown-option check has also passed with a usage message and status 1. The user has also confirmed repeated complete measurements and stopping with Ctrl+C. The lesson code is:
+
+```cpp
+int main(int argc, char* argv[]) {
+    bool watch_mode = false;
+
+    if (argc == 2 && string(argv[1]) == "--watch") {
+        watch_mode = true;
+    } else if (argc != 1) {
+        cerr << "Usage: sysmon [--watch]" << endl;
+        return 1;
+    }
+
+    do {
+        int status = print_snapshot();
+        if (status != 0) {
+            return status;
+        }
+    } while (watch_mode);
+
+    return 0;
+}
+```
+
+| Line or block | Explanation |
+| --- | --- |
+| `int main(int argc, char* argv[])` | Receive the argument count and an array of C-style strings from the shell. Each char pointer in the array points to an argument's text. |
+| `bool watch_mode = false;` | Start with a single measurement run selected. |
+| `argc == 2` | Require the program name plus exactly one argument before examining argv[1]. |
+| `string(argv[1]) == "--watch"` | Convert the argument text to a C++ string and compare its contents with the flag. The preceding argc check and short-circuit AND keep this access valid. |
+| `watch_mode = true;` | Select repetition when the flag is recognized. |
+| `else if (argc != 1)` | Reject unrecognized or excess arguments. With only the program name, argc is 1 and single-run mode is accepted. |
+| Usage message and `return 1;` | Tell the user the accepted command shape and end with an error. The square brackets in the message indicate an optional argument. |
+| `do { ... } while (watch_mode);` | Run the body at least once, then repeat while watch_mode is true. The final semicolon is part of the loop syntax. |
+| `int status = print_snapshot();` | Perform one reading and store its success or failure status. |
+| Status check and `return status;` | Stop main immediately if a snapshot failed, preserving the error status. |
+| Final `return 0;` | Report success after single-run mode finishes. |
+
+For `./build/sysmon`, argc is 1. For `./build/sysmon --watch`, argc is 2 and argv[1] contains --watch. argv[0] contains the command's program name/path.
+
+Build and run the default mode first using `cmake --build build && ./build/sysmon`, then immediately `echo $?`. Expect one set of measurements and status 0. Next run `./build/sysmon --watch`, wait for at least two sets, and press Ctrl+C to interrupt it. Repetition appends output in this first version. Each snapshot's CPU pause paces the loop. The default run has been demonstrated with exit status 0, and watch mode has begun repeating in the user's screenshot. The unknown-option check also passed. The user has now confirmed repeated measurements and stopping with Ctrl+C.
+
+### Watch-mode verification commands
+
+Let `./build/sysmon --watch` finish at least two full sets of uptime, memory, and CPU output, then press Ctrl+C and confirm the terminal prompt returns. Next run the following commands to exercise the invalid-argument branch:
+
+```sh
+./build/sysmon --oops
+echo $?
+```
+
+Expected output is `Usage: sysmon [--watch]` followed by status 1. The flag --oops is deliberately invalid. This branch checks that the program explains its accepted arguments and exits before collecting measurements. The user's screenshot demonstrates the usage message and exit status 1 for --oops. The user has confirmed repeated uptime, memory, and CPU measurements, followed by interruption with Ctrl+C.

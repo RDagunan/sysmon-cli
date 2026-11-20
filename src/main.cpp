@@ -61,7 +61,7 @@ bool read_cpu(istream& input, long long& total_ticks, long long& nonbusy_ticks){
     return true;
 }
 
-int main() {
+int print_snapshot() {
 
 ///////////////// UPTIME INFORMATION ///////////////////
 
@@ -156,6 +156,27 @@ int main() {
     double cpu_percent = 100.0 * busy_ticks / elapsed_ticks;
 
     cout << "CPU usage: " << cpu_percent << "%" << endl;
+
+    return 0;
+}
+
+int main(int argc, char* argv[]) {
+    bool watch_mode = false;
+
+    if (argc == 2 && string(argv[1]) == "--watch") {
+        watch_mode = true;
+    } else if (argc != 1) {
+        cerr << "Usage: sysmon [--watch]" << endl;
+        return 1;
+    }
+
+    do {
+        int status = print_snapshot();
+
+        if (status != 0) {
+            return status;
+        }
+    } while (watch_mode);
 
     return 0;
 }
