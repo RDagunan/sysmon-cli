@@ -16,3 +16,5 @@
 ## Document the work
 
 Update the README when run instructions or visible behavior change. Add a dated line to the decision log when a design choice is settled. In the session journal, explain commands you ran and record their actual results. Label suggested commands as pending until someone runs them.
+
+Maintain teaching tables, field definitions, formulas, worked examples, command explanations, and technical source links in CODE_GUIDE.md. Update these references as the relevant code or explanation develops, and link to the saved documentation from chat.

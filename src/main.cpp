@@ -2,10 +2,69 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <chrono>
+#include <thread>
 
 using namespace std;
 
+bool read_memory(istream& input,
+    long long& total_kb,
+    long long& available_kb) {
+    total_kb = -1;
+    available_kb = -1;
+    string line;
+
+    while (getline(input, line)) {
+        istringstream fields(line);
+        string field_name;
+        long long value_kb;
+
+        if (!(fields >> field_name >> value_kb)) {
+            continue;
+        }
+
+        if (field_name == "MemTotal:") {
+            total_kb = value_kb;
+        } else if (field_name == "MemAvailable:") {
+            available_kb = value_kb;
+        }
+    }
+
+    return total_kb >= 0 && available_kb >= 0;
+}
+
+bool read_cpu(istream& input, long long& total_ticks, long long& nonbusy_ticks){
+    total_ticks = -1;
+    nonbusy_ticks = -1;
+
+    string line;
+    if(!getline(input, line)){
+        return false;
+    }
+
+    istringstream fields(line);
+    string label;
+    long long user, nice, system, idle;
+    long long iowait, irq, softirq, steal;
+
+    if(!(fields >> label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal)){
+        return false;
+    }
+
+    if(label != "cpu"){
+        return false;
+    }
+
+    total_ticks = user + nice + system + idle + iowait + irq + softirq + steal;
+    nonbusy_ticks = idle + iowait;
+
+    return true;
+}
+
 int main() {
+
+///////////////// UPTIME INFORMATION ///////////////////
+
     ifstream uptime_file("/proc/uptime");
 
     if (!uptime_file) {
@@ -29,6 +88,8 @@ int main() {
          << uptime_mins << "m:"
          << uptime_secs << "s" << endl;
 
+//////////////// MEMORY INFORMATION ///////////////////
+
     ifstream memory_file("/proc/meminfo");
 
     if (!memory_file) {
@@ -38,32 +99,63 @@ int main() {
 
     long long mem_total_kb = -1;
     long long mem_available_kb = -1;
-    string line;
 
-    while (getline(memory_file, line)) {
-        istringstream fields(line);
-        string field_name;
-        long long value_kb;
-
-        if (!(fields >> field_name >> value_kb)) {
-            continue;
-        }
-
-        if (field_name == "MemTotal:") {
-            mem_total_kb = value_kb;
-        } else if (field_name == "MemAvailable:") {
-            mem_available_kb = value_kb;
-        }
-    }
-
-    if (mem_total_kb < 0 || mem_available_kb < 0) {
-        cerr << "Error: missing memory information" << endl;
+    if (!read_memory(memory_file, mem_total_kb, mem_available_kb)) {
+        cerr << "Error: cannot read memory information" << endl;
         return 1;
     }
 
     cout << "Memory: " << mem_available_kb / 1024
          << " MiB available / " << mem_total_kb / 1024
          << " MiB total" << endl;
+
+
+/////////////// CPU INFORMATION ///////////////////
+
+    ifstream cpu_file("/proc/stat");
+
+    if (!cpu_file) {
+        cerr << "Error: cannot open /proc/stat" << endl;
+        return 1;
+    }
+
+    long long total_ticks;
+    long long nonbusy_ticks;
+
+    if (!read_cpu(cpu_file, total_ticks, nonbusy_ticks)) {
+        cerr << "Error: cannot read CPU counters" << endl;
+        return 1;
+    }
+
+   this_thread::sleep_for(chrono::seconds(1));
+
+    ifstream second_cpu_file("/proc/stat");
+
+    if (!second_cpu_file) {
+        cerr << "Error: cannot reopen /proc/stat" << endl;
+        return 1;
+    }
+
+    long long second_total_ticks;
+    long long second_nonbusy_ticks;
+
+    if (!read_cpu(second_cpu_file, second_total_ticks, second_nonbusy_ticks)) {
+        cerr << "Error: cannot read second CPU snapshot" << endl;
+        return 1;
+    }
+
+    long long elapsed_ticks = second_total_ticks - total_ticks;
+    long long nonbusy_change = second_nonbusy_ticks - nonbusy_ticks;
+
+    if (elapsed_ticks <= 0 || nonbusy_change < 0 || nonbusy_change > elapsed_ticks) {
+        cerr << "Error: inconsistent CPU readings" << endl;
+        return 1;
+    }
+
+    long long busy_ticks = elapsed_ticks - nonbusy_change;
+    double cpu_percent = 100.0 * busy_ticks / elapsed_ticks;
+
+    cout << "CPU usage: " << cpu_percent << "%" << endl;
 
     return 0;
 }

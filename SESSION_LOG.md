@@ -189,3 +189,66 @@ The earlier pending lists above preserve what was known during journal creation.
 - During code review, kept the line parser because the file contains multiple named fields. Cleaned up comments, spacing, indentation, and variable names in `src/main.cpp`. Updated the README to describe both output lines and recorded the memory-source decision.
 - Verified the edited source with `cmake -S . -B /tmp/sysmon-review-build-20261116`, `cmake --build /tmp/sysmon-review-build-20261116`, and `/tmp/sysmon-review-build-20261116/sysmon` in a temporary review copy. Configuration, compilation, and execution succeeded. The program printed `System uptime: 3h:1m:0s` and `Memory: 25565 MiB available / 32013 MiB total`. These commands verified the success path. The error paths remain untested. No Git commit is claimed.
 - Repeated configuration, build, and execution using the actual source repository as CMake's source directory. All succeeded, and the executable printed `System uptime: 3h:1m:31s` and `Memory: 25466 MiB available / 32013 MiB total`.
+
+## Session — 2026-11-16 — Architecture and next milestones
+
+Checked `git log --oneline -3` for the saved baseline and `git ls-files` for the source and documentation it contains. Commit `0f3e654` records the working uptime and memory monitor. Added [architecture.md](architecture.md) and linked it from the README. Parser checks, CPU sampling, and a possible watch mode are proposals for future sessions.
+
+## Session — 2026-11-19 — Memory parser function
+
+- Inspected `src/main.cpp`. The memory loop is now in `read_memory(istream&, long long&, long long&)`, and `main()` passes the open memory file and two output variables to it.
+- User-provided screenshot shows `cmake --build build` succeeding and `./build/sysmon` printing `System uptime: 0h:3m:6s` and `Memory: 25163 MiB available / 32013 MiB total`.
+- Review found a redundant negative-value check in `main()` after the function call. The function already returns false when either value is negative, and the caller exits on that result. Removing this duplicate check is suggested, pending the user's edit.
+- Proposed next check is sample-text input with total 8192 kB and available 4096 kB, followed by reversed order and missing-field cases. These sample checks have not run yet.
+
+## Session — 2026-11-19 — Learning guide and sample results
+
+- The user's screenshots demonstrate successful builds and runs of the normal two-field sample (success 1, total 8192 kB, available 4096 kB) and the missing-available-field sample (success 0, total 8192 kB, available -1 kB). The reversed-order result is still awaiting confirmation.
+- Reviewed the current source. It contains the missing-field sample at the start of main(), followed by the live uptime and memory reads. The duplicate negative-value check has been removed. The sample failure prints its result and lets the program continue. It does not exercise the real-file caller's error branch.
+- Created CODE_GUIDE.md at the user's request with annotated source snippets, explanations of syntax and design choices, CMake and command explanations, and evidence-based test statuses. Added a README link and an AGENTS.md instruction to maintain this guide as the code evolves.
+
+### Reversed-order sample verified
+
+The latest screenshot shows a successful `cmake --build build && ./build/sysmon`, with sample success 1, total 8192 kB, and available 4096 kB. Source inspection confirms `MemAvailable` precedes `MemTotal` in the sample. All three memory samples now have user-provided execution evidence. Updated CODE_GUIDE.md accordingly. The next proposed check is the uptime calculation at 3600 seconds, followed by removal of the temporary sample output.
+
+### Uptime boundary and sample cleanup
+
+The user reported `1h:0m:0s` after setting the test uptime to 3600.0. A subsequent screenshot shows a successful `cmake --build build && ./build/sysmon` with `System uptime: 0h:43m:36s` and `Memory: 25904 MiB available / 32013 MiB total`. Source inspection confirms the temporary uptime assignment and sample block were removed. Updated CODE_GUIDE.md and marked the manual parser-check milestone complete in architecture.md. Inspecting `/proc/stat` is the proposed next exercise. CPU usage remains unimplemented.
+
+### CPU counter exercise
+
+The user supplied two aggregate CPU readings from `head -n 1 /proc/stat`, separated by `sleep 1` and interactive command entry. Summing the first eight fields gives total changes of 12639 ticks and idle-plus-iowait changes of 12334 ticks. The proposed busy percentage is approximately 2.41% over that interval. Added the worked example to CODE_GUIDE.md. This is arithmetic on user-provided measurements. No CPU-monitor implementation or executable test is claimed.
+
+### Documentation reference coverage
+
+The user requested that all tables and references be retained in the documentation before further build work. Expanded CODE_GUIDE.md with the full CPU-field table, uptime and memory field reference, memory-unit conversions, inspection commands, general CPU formulas, the illustrative 25% example, and supporting source links. Correct whole-MiB conversions for the earlier sample are 32013 total and 26285 available. Earlier chat estimates of 32014 and 26286 were one MiB too high. Added maintenance instructions to AGENTS.md and conventions.md. This session updates documentation.
+
+### CPU coding lesson 1 proposed
+
+Inspected the source and found an unfinished CPU section opening /proc/cpuinfo. Added a lesson to CODE_GUIDE.md using /proc/stat for counters, a read_cpu function matching the existing reference-parameter pattern, and a real-file call that temporarily prints the two snapshot totals. The user will make the source edits as part of learning. Compilation and runtime results for this lesson are pending.
+
+### CPU snapshot verified and second lesson proposed
+
+Source review confirms read_cpu extracts the first eight counters from the aggregate CPU line and main() uses it with /proc/stat. The user's screenshot shows a successful build and run with uptime 1h:38m:10s, memory 25352 MiB available / 32013 MiB total, total CPU ticks 9377605, and nonbusy CPU ticks 9036187. Updated the guide's first-lesson status and added proposed sampling code with a pause, a fresh file stream, consistency checks, and floating-point percentage calculation. The second lesson has not been implemented or tested yet.
+
+## Session — 2026-11-20 — Live CPU percentage verified
+
+Reviewed the saved source and the user's successful build screenshot, showing uptime 1h:41m:15s, available memory 25725 MiB of 32013 MiB, and CPU usage 1.50094%. The code takes two snapshots, checks total and nonbusy changes, and calculates a floating-point percentage. Minor spacing differences from conventions remain in read_cpu and the sleep statement.
+
+Ran `cmake -S . -B /tmp/sysmon-cpu-review-bycBNJ`, `cmake --build /tmp/sysmon-cpu-review-bycBNJ`, and `/tmp/sysmon-cpu-review-bycBNJ/sysmon` from the actual source repository. All succeeded with exit status 0. Output was uptime 1h:42m:8s, available memory 25622 MiB of 32013 MiB, and CPU usage 0.502197%. Updated README.md, CODE_GUIDE.md, architecture.md, and decisions.md. Known-input CPU arithmetic and error paths remain pending. No source edits or commits were made during this review.
+
+### Known-input CPU checks proposed
+
+Added temporary test assignments and their placement to CODE_GUIDE.md for a 25% case, followed by unchanged counters that should return an error and exit status 1. Documented `echo $?` and removal of the assignments afterward. The user will perform the edits and runs. Neither test is marked executed yet.
+
+### Known-input 25% check passed
+
+The user's screenshot shows a successful `cmake --build build && ./build/sysmon` and `CPU usage: 25%` after the temporary known-input assignments. Source inspection confirms those assignments. This verifies the normal arithmetic case. The unchanged-counter check, its exit status, and restoration of live sampling remain pending.
+
+### Zero-change CPU check passed
+
+The user's screenshot shows a successful build followed by `Error: inconsistent CPU readings`. The immediately following `echo $?` prints 1. Source inspection confirms both snapshots are temporarily assigned total 1000 and nonbusy 800. This verifies the zero-elapsed error branch. Decreasing or excessive nonbusy changes remain untested. Next, remove the four assignments and their test comment, rebuild, and confirm live CPU sampling is restored.
+
+### Live CPU sampling restored
+
+The user reported uptime 2h:17m:42s, available memory 25631 MiB of 32013 MiB, and CPU usage 1.19197% after cleanup. Source inspection confirms the temporary snapshot assignments are removed and the calculation uses values from the two real reads. Updated the guide and roadmap. The 25% arithmetic and zero-change error tests passed earlier. Other error conditions remain untested. No commit was made in this documentation update.
