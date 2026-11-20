@@ -34,6 +34,16 @@ Run repeated measurements with:
 
 Each snapshot is appended to the terminal. The existing CPU sampling pause paces updates at roughly one snapshot per second plus processing time. Press Ctrl+C to stop. Running without arguments prints one snapshot. Unknown or extra arguments print `Usage: sysmon [--watch]` and exit with status 1.
 
+## Run the tests
+
+After configuring and building, run:
+
+```sh
+(cd build && ctest --output-on-failure)
+```
+
+CTest runs the registered memory_parser test. A nonzero test exit status reports failure. The parentheses keep the directory change local to that command.
+
 ## Where things live
 
 For annotated code snippets and explanations of each step, read [CODE_GUIDE.md](CODE_GUIDE.md).
@@ -45,6 +55,8 @@ For the program's structure, current milestone, and proposed next steps, read [a
 | [src/main.cpp](src/main.cpp) | Start at `main()` for argument handling and repetition. `print_snapshot()` reads and displays uptime, memory, and CPU usage. |
 | [CMakeLists.txt](CMakeLists.txt) | Sets the C++ standard and lists the sources for the `sysmon` executable. |
 | `build/` | Generated build files and executable. Git ignores this directory. |
-| `include/sysmon/`, `tests/` | Reserved for project headers and tests. Both are currently empty. |
+| [include/sysmon/metrics.h](include/sysmon/metrics.h) | Declaration of the shared memory parser. |
+| [src/metrics.cpp](src/metrics.cpp) | Implementation of read_memory used by the application. |
+| [tests/metrics_test.cpp](tests/metrics_test.cpp) | Automated memory-parser checks registered with CTest. |
 
 See [conventions.md](conventions.md) for development practices, [decisions.md](decisions.md) for design choices, and [SESSION_LOG.md](SESSION_LOG.md) for session history. AI contributors should start with [AGENTS.md](AGENTS.md).

@@ -689,3 +689,234 @@ echo $?
 ```
 
 Expected output is `Usage: sysmon [--watch]` followed by status 1. The flag --oops is deliberately invalid. This branch checks that the program explains its accepted arguments and exits before collecting measurements. The user's screenshot demonstrates the usage message and exit status 1 for --oops. The user has confirmed repeated uptime, memory, and CPU measurements, followed by interruption with Ctrl+C.
+
+## Proposed next lesson — repeatable memory tests
+
+The working watch-mode milestone is committed as 1e9ed3a. The suggested next step is to save our manual checks in a separate test program, starting with read_memory.
+
+| Proposed path | Responsibility | Reason |
+| --- | --- | --- |
+| include/sysmon/metrics.h | Declare read_memory, including its parameter and return types. | Let both application and test code know how to call it. |
+| src/metrics.cpp | Hold the existing read_memory definition. | Keep one implementation shared by application and tests. |
+| tests/metrics_test.cpp | Supply known text and compare the result and output values with expectations. | Make the existing manual checks repeatable. |
+| CMakeLists.txt | Build and connect the implementation, application, and test target. | Make the test runnable through the build workflow. |
+
+A declaration states the function's name and types. Its definition contains the statements that run. The first exercise will move the existing function without changing its parser logic, then rebuild the application. The next exercise will add the normal-order sample test. Reversed-order and missing-field tests follow. This work remains proposed, with no source edits or automated test results yet.
+
+## Reviewing the first file split
+
+The learner created src/metrics.cpp and an empty tests/metrics_test.cpp. The memory parser moved into metrics.cpp, along with a second main function containing the live memory display. main.cpp lost its memory display block. No metrics header exists yet. CMake currently declares the sysmon executable twice.
+
+The initial attempt failed with a duplicate-target error. The learner has now completed the corrections below. Source inspection confirms the header, one application main, restored memory output, and one target compiling both source files. The user's screenshot shows successful configuration, compilation, linking, and live output.
+
+### Keep one application entry point
+
+Keep read_memory in metrics.cpp. Move the statements inside its new main function that open /proc/meminfo, check it, call read_memory, and print the memory line back into print_snapshot in main.cpp, between uptime output and CPU sampling. Remove the extra main function from metrics.cpp after moving that block. Keep print_snapshot's existing final return statement.
+
+The responsibilities are:
+
+| File | Contents for this step |
+| --- | --- |
+| include/sysmon/metrics.h | Declaration of read_memory. |
+| src/metrics.cpp | Definition of read_memory and the headers its implementation needs. |
+| src/main.cpp | Application entry point, watch loop, print_snapshot, and read_cpu. |
+| tests/metrics_test.cpp | Still empty. Its own test entry point will be added in a later lesson as a separate executable. |
+
+### Declare the shared function
+
+Create include/sysmon/metrics.h with:
+
+```cpp
+#ifndef SYSMON_METRICS_H
+#define SYSMON_METRICS_H
+
+#include <istream>
+
+bool read_memory(std::istream& input,
+                 long long& total_kb,
+                 long long& available_kb);
+
+#endif
+```
+
+The opening preprocessor directives and closing endif form an include guard. They prevent processing this header's contents more than once in one compilation unit. The istream header supplies the stream type. std:: qualifies the standard-library type explicitly. The function declaration states the return type and parameters and ends with a semicolon. The function body lives in metrics.cpp.
+
+Add `#include "sysmon/metrics.h"` to both main.cpp and metrics.cpp. The compiler will use that declaration to check calls and the function definition. CMake's include-directory setting below lets it find the header.
+
+metrics.cpp only needs the following includes for the memory parser:
+
+```cpp
+#include "sysmon/metrics.h"
+#include <sstream>
+#include <string>
+```
+
+Its existing using namespace std and read_memory definition can follow those includes. File opening and terminal output remain in print_snapshot.
+
+### Compile both source files into one executable
+
+Replace the two existing add_executable statements with one:
+
+```cmake
+add_executable(sysmon
+    src/main.cpp
+    src/metrics.cpp
+)
+
+target_include_directories(sysmon PRIVATE include)
+```
+
+The source list compiles both cpp files as part of sysmon. Linking joins their compiled code, so the call in main.cpp can reach the definition in metrics.cpp. The include directory lets this target resolve sysmon/metrics.h under include/. PRIVATE applies this setting to the sysmon target itself.
+
+Keep the existing minimum-version, project, and C++17 statements above these lines. The test file is not part of this executable. A separate test target will be introduced when its test main is ready.
+
+### Verify the corrected split
+
+```sh
+cmake -S . -B build
+cmake --build build && ./build/sysmon
+```
+
+Expect a successful configuration and build followed by all three measurements, including the restored memory line. These commands are proposed for the corrected files. The only fresh result observed in this review was the duplicate-target configuration failure.
+
+## Automated memory test lesson 1
+
+The corrected file split has built and run successfully. The learner has now written the first test, and a screenshot demonstrates memory_parser passing through CTest. Source review found that the application target was removed from CMake while adding the test target. The correction below restores the combined build.
+
+Put this into tests/metrics_test.cpp:
+
+```cpp
+#include "sysmon/metrics.h"
+#include <iostream>
+#include <sstream>
+
+int main() {
+    std::istringstream sample(
+        "MemTotal: 8192 kB\n"
+        "MemAvailable: 4096 kB\n"
+    );
+
+    long long total_kb;
+    long long available_kb;
+
+    if (!read_memory(sample, total_kb, available_kb)) {
+        std::cerr << "FAIL: could not read the sample\n";
+        return 1;
+    }
+
+    if (total_kb != 8192 || available_kb != 4096) {
+        std::cerr << "FAIL: incorrect memory values\n";
+        return 1;
+    }
+
+    std::cout << "Memory parser test passed\n";
+    return 0;
+}
+```
+
+The project header declares the function. iostream provides diagnostic output, and sstream provides the sample stream. The test main runs separately from the application main. The sample literals contain known values followed by newlines. The two integer declarations hold outputs initialized by read_memory. The first check fails if parsing returns false. The second check fails if either number differs from its expected value. The logical OR operator makes either mismatch sufficient to fail. Both failures return 1, allowing a test runner to detect them automatically. Reaching the final message and return 0 reports success.
+
+Append this to CMakeLists.txt after the application target and its include-directory setting:
+
+```cmake
+enable_testing()
+
+add_executable(metrics_test
+    tests/metrics_test.cpp
+    src/metrics.cpp
+)
+target_include_directories(metrics_test PRIVATE include)
+
+add_test(NAME memory_parser COMMAND metrics_test)
+```
+
+| Statement | Purpose |
+| --- | --- |
+| enable_testing() | Enable CTest registration in this build directory. |
+| add_executable(metrics_test ...) | Build a separate test program using the test main and the existing memory implementation. |
+| target_include_directories(metrics_test PRIVATE include) | Let the test target find the shared header. Each target has its own include settings. |
+| add_test(NAME memory_parser COMMAND metrics_test) | Register a named check whose success is determined by the test executable's exit status. |
+
+The application and test compile the same metrics.cpp source into their own executables. Each executable has exactly one main. Keep the test source out of the sysmon source list.
+
+From the project root, configure, build, and run the test:
+
+```sh
+cmake -S . -B build
+cmake --build build
+(cd build && ctest --output-on-failure)
+```
+
+The last command enters build in a subshell. Parentheses keep the directory change local to that command. CTest runs registered tests and reports failed tests' output when requested with --output-on-failure. Expect one passing test named memory_parser and a summary reporting 100% passed. Actual results remain pending. This checks the normal memory sample; reversed-order and missing-field tests will follow.
+
+## Keep the application and test targets together
+
+The first test passed, but the current CMake file defines only metrics_test. Restore the application target as well. The following complete CMakeLists.txt is the proposed correction:
+
+```cmake
+cmake_minimum_required(VERSION 3.16)
+project(SysMonCLI LANGUAGES CXX)
+set(CMAKE_CXX_STANDARD 17)
+
+enable_testing()
+
+add_executable(sysmon
+    src/main.cpp
+    src/metrics.cpp
+)
+target_include_directories(sysmon PRIVATE include)
+
+add_executable(metrics_test
+    tests/metrics_test.cpp
+    src/metrics.cpp
+)
+target_include_directories(metrics_test PRIVATE include)
+
+add_test(NAME memory_parser COMMAND metrics_test)
+```
+
+The two target names represent two executables. sysmon has its application main, and metrics_test has its testing main. Both compile the existing parser implementation and use the shared header directory. The add_test statement registers the test executable with CTest. Building only metrics_test can leave an older sysmon binary in build/, so running that existing file would not demonstrate that the current application sources were rebuilt.
+
+After saving the correction, run these from the project root:
+
+```sh
+cmake -S . -B build
+cmake --build build
+./build/sysmon
+(cd build && ctest --output-on-failure)
+```
+
+Expect both targets in the build output, all three live measurements, and the registered memory_parser test passing. The normal memory test has passed. The user's screenshot now confirms both targets building, the live application printing all three measurements, and memory_parser passing. Reversed-order and missing-field automated tests will follow.
+
+## Automated memory test lesson 2 — order and missing fields
+
+The normal sample and combined application/test build have passed. The learner has added the following checks to tests/metrics_test.cpp. Insert them before its final success message and return 0, reusing the existing total_kb and available_kb variables.
+
+```cpp
+std::istringstream reversed_sample(
+    "MemAvailable: 4096 kB\n"
+    "MemTotal: 8192 kB\n"
+);
+
+if (!read_memory(reversed_sample, total_kb, available_kb)
+    || total_kb != 8192 || available_kb != 4096) {
+    std::cerr << "FAIL: reversed field order\n";
+    return 1;
+}
+
+std::istringstream missing_sample("MemTotal: 8192 kB\n");
+
+if (read_memory(missing_sample, total_kb, available_kb)
+    || total_kb != 8192 || available_kb != -1) {
+    std::cerr << "FAIL: missing available-memory field\n";
+    return 1;
+}
+```
+
+The reversed sample must parse successfully and produce the same two values. Its condition fails the test if the function returns false or either value differs. The missing-field sample must return false, preserve the read total, and leave available memory at -1. Its condition deliberately omits the negation before read_memory because returning true for incomplete input would be a failure. Reusing output variables also checks that the function resets its outputs on each call instead of keeping the previous 4096 value.
+
+Change the final success message to `All memory parser checks passed`. Build with `cmake --build build` and run `(cd build && ctest --output-on-failure)`. No CMake changes are needed. CTest will still report one registered test, memory_parser, which now runs three checks inside one test executable. The user's latest screenshot demonstrates memory_parser passing after these checks were added. Source review confirms all three cases execute before return 0.
+
+## Automated memory milestone complete
+
+Source review confirms the normal-order, reversed-order, and missing-available-field checks all run before the test returns 0. The user's screenshot shows both targets building and CTest reporting memory_parser passed, with 0 failures out of 1 registered test. Together, the test checks parsing success, exact returned values, rejection of missing data, and resetting an output between calls. The test source, shared implementation, header, CMake registration, and documentation are ready for a checkpoint commit. Automated CPU checks remain future work.

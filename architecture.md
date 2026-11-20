@@ -16,7 +16,7 @@ Each step checks its input before printing. If all succeed, the program exits wi
 
 ## Where changes belong
 
-- **Today:** `src/main.cpp` owns the file reads, calculations, and output. [CMakeLists.txt](CMakeLists.txt) builds that source as the C++17 executable `sysmon`. The generated executable lives under `build/`.
+- **Today:** `src/main.cpp` owns application flow, CPU parsing, file reads, calculations, and output. The memory parser now lives in `src/metrics.cpp`, declared in `include/sysmon/metrics.h`. [CMakeLists.txt](CMakeLists.txt) builds that source as the C++17 executable `sysmon`. The generated executable lives under `build/`.
 - **As parsing grows:** give a calculation or parser its own function when you need to check it with a known input. For example, a memory parser could read from a stream so the same code accepts a real file during a run and a short piece of sample text during a test.
 - **When a function needs its own file:** put the implementation in `src/`, declarations shared by multiple source files in `include/sysmon/`, and checks in `tests/`. List any new compiled source in CMake. These directories describe where future code can go.
 
@@ -29,10 +29,16 @@ Each step checks its input before printing. If all succeed, the program exits wi
 | 3. Add CPU usage — complete | Read the aggregate `cpu` line from `/proc/stat` twice, about one second apart. The counters accumulate since boot. Calculate the share of elapsed CPU time spent busy from the differences between samples. | A known pair of samples with 25 busy ticks out of 100 elapsed gives 25%. A zero change in total ticks is handled before division. A live run prints a labeled CPU percentage. |
 | 4. Verify the complete snapshot — live build and run complete | Build in a fresh directory and run all three measurements together. Document the CPU sampling delay, output, and run command. | Someone following the README can build the program, read uptime, RAM, and CPU usage in a single run, and understand what interval the CPU value covers. |
 
-**Current checkpoint:** watch mode is implemented. The default run and unknown-option exit status have screenshot evidence, and the user confirmed repeated measurements and stopping with Ctrl+C. Watch-mode changes are awaiting a commit. File/parse failures and the remaining CPU consistency conditions lack runtime evidence.
+**Current checkpoint:** watch mode is implemented. The default run and unknown-option exit status have screenshot evidence, and the user confirmed repeated measurements and stopping with Ctrl+C. Watch-mode changes are saved in commit 1e9ed3a. The user reported pushing it, and local main matches the tracking ref origin/main. File/parse failures and the remaining CPU consistency conditions lack runtime evidence.
 
 The earlier three-measurement milestone is committed as ee5bc5a and pushed to RDagunan/sysmon-cli. The current source puts one measurement run in print_snapshot(). main() selects single-run mode or repeated --watch mode, rejects invalid arguments, and propagates snapshot errors. Watch mode appends output and uses the CPU sampling pause to pace each cycle. Error propagation is reviewed in source; a snapshot failure during watch mode has not been triggered. See CODE_GUIDE.md for the code explanations.
 
 ## Watch-mode milestone
 
-The learner extracted print_snapshot, added argc/argv parsing and a do/while loop, verified the default run returns 0, and verified an unknown option returns 1. The user reported that watch mode repeated all three measurements and stopped with Ctrl+C. The README documents both commands. This milestone is ready for review and a commit.
+The learner extracted print_snapshot, added argc/argv parsing and a do/while loop, verified the default run returns 0, and verified an unknown option returns 1. The user reported that watch mode repeated all three measurements and stopped with Ctrl+C. The README documents both commands. This milestone is committed as 1e9ed3a.
+
+## Repeatable memory checks — complete
+
+read_memory lives in src/metrics.cpp and is declared in include/sysmon/metrics.h. Both sysmon and metrics_test compile this implementation. CMake registers metrics_test with CTest under the name memory_parser.
+
+The normal-order, reversed-order, and missing-available-field checks have passed in the test executable. The application was also rebuilt and run after the file split, preserving all three live measurements. These changes are ready for a checkpoint commit. CPU parser and percentage tests can follow in a future lesson. See CODE_GUIDE.md for the code and explanations.

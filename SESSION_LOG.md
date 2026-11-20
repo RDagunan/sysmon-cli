@@ -274,3 +274,27 @@ The user's screenshot shows `./build/sysmon --oops` printing the usage message a
 ### Watch repetition and Ctrl+C confirmed
 
 The user reported that --watch repeated uptime, memory, and CPU usage and stopped with Ctrl+C. This is user-reported execution evidence. Default-mode exit status 0 and invalid-option exit status 1 already have screenshot evidence. Updated README.md, CODE_GUIDE.md, architecture.md, and decisions.md for the implemented feature. Snapshot-error propagation in the loop remains reviewed in source rather than triggered at runtime. No commit or push was performed during this update.
+
+### Watch milestone pushed; repeatable tests proposed
+
+The user reported pushing watch mode. Inspected git status and git log. Commit 1e9ed3a is the watch-mode milestone, local main matches origin/main, and the working tree was clean before this documentation update. Updated the roadmap's stale commit status. Proposed saving the manual memory checks as a test executable, beginning by sharing read_memory between application and tests through a header and implementation file. Added the proposed layout and learning steps to CODE_GUIDE.md. No source edits or automated tests were performed during this update.
+
+### First file-split review
+
+Inspected the learner's edits. read_memory and the live memory display moved into src/metrics.cpp with a second main. The display block was removed from print_snapshot. include/sysmon is empty and tests/metrics_test.cpp is empty. CMake declares sysmon twice. Ran cmake against a fresh temporary build directory, which failed with a duplicate-target error at CMakeLists.txt line 5. Compilation did not run. Added correction instructions to CODE_GUIDE.md covering the shared header, one application entry point, restored memory output, and one target containing both sources. The user will make the corrections. No source files were edited during this review.
+
+### Corrected source split verified
+
+Reviewed the learner's saved CMake, header, implementation, and application call. There is one sysmon target containing main.cpp and metrics.cpp, both source files include the shared header, and the live memory display is back in print_snapshot. The user's screenshot shows configuration and build success, uptime 4h:5m:18s, available memory 24473 MiB of 32013 MiB, and CPU usage 3.26838%. Updated the README and architecture layout descriptions. Added a proposed first automated test and CTest registration lesson to CODE_GUIDE.md. tests/metrics_test.cpp remains empty at review time. No automated test has run yet, and no source edits were made in this review.
+
+### First automated memory test passed; application target missing
+
+The user's screenshot shows configuration, compilation of metrics_test, and one CTest check named memory_parser passing. Reviewed the test source and confirmed it checks parsing success and exact expected values. Reviewed CMakeLists.txt and found that only metrics_test is defined; the sysmon application target was removed. Added a full combined CMake example to CODE_GUIDE.md with both targets and follow-up build, application-run, and test commands. The test's normal case passed. Restoring the application target and checking that build remain pending user edits. No source or build configuration was changed by the assistant.
+
+### Combined application and test build passed
+
+The user's screenshot shows both sysmon and metrics_test targets building. The live application printed uptime 4h:24m:18s, memory 24509 MiB available of 32013 MiB, and CPU usage 2.25423%. CTest reported 1/1 memory_parser passed. Reviewed the saved CMake and normal-order test source. Updated README.md with test instructions and added proposed reversed-order and missing-field checks to CODE_GUIDE.md. The two added automated cases remain pending user implementation and execution. No source edits were made by the assistant.
+
+### All three automated memory checks passed
+
+The user supplied a screenshot of a successful build and CTest result, memory_parser passed with 0 failures out of 1 registered test. Source review confirms normal-order, reversed-order, and missing-available-field cases all execute before the test returns 0. Updated CODE_GUIDE.md and architecture.md to mark the memory-test milestone complete. CPU automated tests remain future work. No source changes, commit, or push were performed during this documentation update.
