@@ -298,3 +298,31 @@ The user's screenshot shows both sysmon and metrics_test targets building. The l
 ### All three automated memory checks passed
 
 The user supplied a screenshot of a successful build and CTest result, memory_parser passed with 0 failures out of 1 registered test. Source review confirms normal-order, reversed-order, and missing-available-field cases all execute before the test returns 0. Updated CODE_GUIDE.md and architecture.md to mark the memory-test milestone complete. CPU automated tests remain future work. No source changes, commit, or push were performed during this documentation update.
+
+## Session — 2026-11-25 — CPU test preparation
+
+Inspected git status, git log, CMake, the shared memory parser and header, the test file, and read_cpu in main.cpp. The working tree was clean before documentation edits. Commit e243224 saves automated memory checks, and local main matches origin/main. Added the next lesson to CODE_GUIDE.md and architecture.md: move the existing CPU parser to metrics.cpp, declare it in metrics.h, and rebuild the application plus existing tests. The user will make the source edits. CPU refactoring and automated CPU tests remain pending.
+
+### CPU parser move built and ran
+
+The user's screenshot shows a successful build, uptime 0h:17m:20s, available memory 26324 MiB of 32013 MiB, CPU usage 2.74828%, and memory_parser passing. Source review confirms read_cpu moved to metrics.cpp and the application uses the header declaration. The CPU declaration is after endif, so moving endif below both declarations is recommended. Added the first known-input CPU parser test and its CMake registration lesson to CODE_GUIDE.md. The test source edits, guard correction, and cpu_parser runtime result are pending.
+
+### First automated CPU parser check passed
+
+The user's screenshot shows memory_parser and cpu_parser passing, 0 failures out of 2 registered tests. Reviewed the CPU sample test and header. Updated README.md to list both tests and shared parser implementations. Added proposed wrong-label and incomplete-counter checks to CODE_GUIDE.md. The two new cases remain pending user implementation and execution. No application or test source files were changed by the assistant.
+
+### CPU rejection checks verified; calculation lesson proposed
+
+Reviewed source: wrong-label and incomplete-line tests are present, and the header guard now covers read_cpu. Configured a fresh build at /tmp/sysmon-cpu-tests-RlzIgj, built all targets, ran CTest, and ran sysmon. Both registered tests passed. The application printed uptime 0h:30m:16s, memory 25757 MiB available of 32013 MiB, and CPU usage 2.01765%. All commands returned 0. Added a proposed calculation-extraction lesson to CODE_GUIDE.md and updated the roadmap. The user will implement the function and caller edits. No application source or test source was changed by the assistant.
+
+### Calculation extraction built and ran
+
+The user's screenshot shows a successful build, live uptime 0h:33m:52s, memory 25543 MiB available of 32013 MiB, CPU usage 0.626174%, and both registered parser tests passing. Source inspection confirms calculate_cpu_usage is defined in metrics.cpp, declared inside the header guard, and called by print_snapshot. The CPU test currently contains parser checks only. Added proposed direct 25% and zero-elapsed calculation checks to CODE_GUIDE.md. Those new automated cases remain pending user implementation and execution.
+
+### Direct CPU calculation checks passed
+
+The user's screenshot shows rebuilding cpu_test and both registered tests passing. Source inspection confirms the 25% case and zero-elapsed rejection check run before the success return. Added the final two planned nonbusy-guard cases to CODE_GUIDE.md: a negative change and a change exceeding total elapsed ticks. Their implementation and execution remain pending. No source edits were made by the assistant.
+
+### CPU-testing milestone complete
+
+The user's screenshot shows rebuilding cpu_test and both CTest registrations passing with zero failures. Reviewed tests/cpu_test.cpp and confirmed three parser cases plus four calculation cases all execute before returning success. The header declares both parsers and the calculation helper inside its guard, and metrics.cpp owns their implementations. Updated README.md, CODE_GUIDE.md, architecture.md, and decisions.md. This milestone is ready for review and a commit. No source edits, commit, or push were performed in this documentation update.

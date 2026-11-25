@@ -7,3 +7,4 @@
 - [2026-11-16] Read `MemTotal` and `MemAvailable` by name from `/proc/meminfo` and display whole MiB because the file contains many fields reported in kB.
 - [2026-11-20] Calculate aggregate CPU usage from two /proc/stat snapshots about one second apart, treating idle plus iowait as nonbusy and checking differences before division.
 - [2026-11-20] Add optional --watch repetition around print_snapshot, preserving the default single run and reusing the CPU sampling pause to pace updates.
+- [2026-11-25] Share CPU parsing and percentage calculation through metrics.cpp and metrics.h so the application and automated tests exercise the same implementation.

@@ -41,4 +41,12 @@ The learner extracted print_snapshot, added argc/argv parsing and a do/while loo
 
 read_memory lives in src/metrics.cpp and is declared in include/sysmon/metrics.h. Both sysmon and metrics_test compile this implementation. CMake registers metrics_test with CTest under the name memory_parser.
 
-The normal-order, reversed-order, and missing-available-field checks have passed in the test executable. The application was also rebuilt and run after the file split, preserving all three live measurements. These changes are ready for a checkpoint commit. CPU parser and percentage tests can follow in a future lesson. See CODE_GUIDE.md for the code and explanations.
+The normal-order, reversed-order, and missing-available-field checks have passed in the test executable. The application was also rebuilt and run after the file split, preserving all three live measurements. These changes are committed as e243224, and local main matches origin/main. See CODE_GUIDE.md for the code and explanations.
+
+## CPU automated checks — complete
+
+read_cpu and calculate_cpu_usage are defined in src/metrics.cpp and declared in include/sysmon/metrics.h. print_snapshot collects readings and calls the shared calculation helper. The helper owns the difference checks and percentage arithmetic.
+
+The cpu_test executable checks a valid line, an incorrect label, an incomplete line, the 25% calculation, zero elapsed ticks, a negative nonbusy difference, and an excessive nonbusy difference. Source review confirms all seven cases run before success. The user's CTest screenshot shows memory_parser and cpu_parser passing. The application has also run successfully since the calculation extraction.
+
+The changes are ready for review and a checkpoint commit. Error propagation from actual file-open failures or a failing live snapshot in watch mode remains outside the demonstrated cases.

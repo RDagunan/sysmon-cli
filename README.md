@@ -42,7 +42,7 @@ After configuring and building, run:
 (cd build && ctest --output-on-failure)
 ```
 
-CTest runs the registered memory_parser test. A nonzero test exit status reports failure. The parentheses keep the directory change local to that command.
+CTest runs the registered memory_parser and cpu_parser tests, covering memory parsing, CPU parsing, and CPU percentage calculations. A nonzero test exit status reports failure. The parentheses keep the directory change local to that command.
 
 ## Where things live
 
@@ -55,8 +55,9 @@ For the program's structure, current milestone, and proposed next steps, read [a
 | [src/main.cpp](src/main.cpp) | Start at `main()` for argument handling and repetition. `print_snapshot()` reads and displays uptime, memory, and CPU usage. |
 | [CMakeLists.txt](CMakeLists.txt) | Sets the C++ standard and lists the sources for the `sysmon` executable. |
 | `build/` | Generated build files and executable. Git ignores this directory. |
-| [include/sysmon/metrics.h](include/sysmon/metrics.h) | Declaration of the shared memory parser. |
-| [src/metrics.cpp](src/metrics.cpp) | Implementation of read_memory used by the application. |
+| [include/sysmon/metrics.h](include/sysmon/metrics.h) | Declarations of the shared memory and CPU parsers. |
+| [src/metrics.cpp](src/metrics.cpp) | Shared memory parser, CPU parser, and CPU percentage calculation used by the application and tests. |
 | [tests/metrics_test.cpp](tests/metrics_test.cpp) | Automated memory-parser checks registered with CTest. |
+| [tests/cpu_test.cpp](tests/cpu_test.cpp) | Automated CPU-parser and percentage-calculation checks registered with CTest. |
 
 See [conventions.md](conventions.md) for development practices, [decisions.md](decisions.md) for design choices, and [SESSION_LOG.md](SESSION_LOG.md) for session history. AI contributors should start with [AGENTS.md](AGENTS.md).

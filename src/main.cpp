@@ -9,34 +9,6 @@
 using namespace std;
 
 
-bool read_cpu(istream& input, long long& total_ticks, long long& nonbusy_ticks){
-    total_ticks = -1;
-    nonbusy_ticks = -1;
-
-    string line;
-    if(!getline(input, line)){
-        return false;
-    }
-
-    istringstream fields(line);
-    string label;
-    long long user, nice, system, idle;
-    long long iowait, irq, softirq, steal;
-
-    if(!(fields >> label >> user >> nice >> system >> idle >> iowait >> irq >> softirq >> steal)){
-        return false;
-    }
-
-    if(label != "cpu"){
-        return false;
-    }
-
-    total_ticks = user + nice + system + idle + iowait + irq + softirq + steal;
-    nonbusy_ticks = idle + iowait;
-
-    return true;
-}
-
 
 
 int print_snapshot() {
@@ -126,13 +98,12 @@ int print_snapshot() {
     long long elapsed_ticks = second_total_ticks - total_ticks;
     long long nonbusy_change = second_nonbusy_ticks - nonbusy_ticks;
 
-    if (elapsed_ticks <= 0 || nonbusy_change < 0 || nonbusy_change > elapsed_ticks) {
+    double cpu_percent;
+
+    if (!calculate_cpu_usage(elapsed_ticks, nonbusy_change, cpu_percent)) {
         cerr << "Error: inconsistent CPU readings" << endl;
         return 1;
     }
-
-    long long busy_ticks = elapsed_ticks - nonbusy_change;
-    double cpu_percent = 100.0 * busy_ticks / elapsed_ticks;
 
     cout << "CPU usage: " << cpu_percent << "%" << endl;
 

@@ -920,3 +920,271 @@ Change the final success message to `All memory parser checks passed`. Build wit
 ## Automated memory milestone complete
 
 Source review confirms the normal-order, reversed-order, and missing-available-field checks all run before the test returns 0. The user's screenshot shows both targets building and CTest reporting memory_parser passed, with 0 failures out of 1 registered test. Together, the test checks parsing success, exact returned values, rejection of missing data, and resetting an output between calls. The test source, shared implementation, header, CMake registration, and documentation are ready for a checkpoint commit. Automated CPU checks remain future work.
+
+## CPU tests lesson 1 — share the existing parser
+
+On 2026-11-25, source review found read_cpu still defined in src/main.cpp. The memory-test milestone is saved as e243224, and local main matches origin/main. The following source edits are the next proposed learning exercise.
+
+1. Move the entire existing read_cpu definition from main.cpp to metrics.cpp, after read_memory.
+2. Add the declaration below to include/sysmon/metrics.h, before its closing endif.
+3. Keep both read_cpu calls in print_snapshot. main.cpp already includes the project header, so those calls can use its declaration.
+
+```cpp
+bool read_cpu(std::istream& input,
+              long long& total_ticks,
+              long long& nonbusy_ticks);
+```
+
+The boolean return still reports parsing success. The stream reference accepts real-file or sample-text input, and the two integer references receive the calculated totals. The declaration ends in a semicolon. The function body, including its existing braces, moves to metrics.cpp.
+
+Keep metrics.cpp's existing includes and using namespace std, which also support the CPU parser. Each target already compiles metrics.cpp and searches include/, so this step needs no CMake changes. Keep exactly one read_cpu definition.
+
+Run from the project root:
+
+```sh
+cmake --build build
+./build/sysmon
+(cd build && ctest --output-on-failure)
+```
+
+Expected results are both targets building, all three live measurements, and the existing memory_parser test passing. These results are pending for this refactor. No CPU automated test has been added yet.
+
+The following lesson will supply a known CPU line with total 100 and nonbusy 75 to check the parser. Percentage calculation is a separate operation and will need its own testable function later.
+
+### Source move reviewed
+
+The user's 2026-11-25 screenshot demonstrates the application running with all three measurements and the existing memory test passing after the move. Source inspection confirms read_cpu is defined in metrics.cpp and the application calls it through the shared header. The read_cpu declaration was placed after endif. Move that endif to the bottom so the guard covers both declarations. Repeated identical function declarations are permitted, which explains why this placement still compiled.
+
+## CPU tests lesson 2 — a known counter line
+
+The following test and CMake additions are proposed learner edits. Create tests/cpu_test.cpp:
+
+```cpp
+#include "sysmon/metrics.h"
+#include <iostream>
+#include <sstream>
+
+int main() {
+    std::istringstream sample("cpu 10 0 15 70 5 0 0 0 0 0\n");
+    long long total_ticks;
+    long long nonbusy_ticks;
+
+    if (!read_cpu(sample, total_ticks, nonbusy_ticks)) {
+        std::cerr << "FAIL: could not read CPU sample\n";
+        return 1;
+    }
+
+    if (total_ticks != 100 || nonbusy_ticks != 75) {
+        std::cerr << "FAIL: incorrect CPU totals\n";
+        return 1;
+    }
+
+    std::cout << "CPU parser test passed\n";
+    return 0;
+}
+```
+
+| Code | Purpose |
+| --- | --- |
+| Project header include | Declare the existing parser used by the test. |
+| iostream and sstream includes | Provide output and a stream containing known text. |
+| istringstream sample | Supply the aggregate label and ten numeric counters in kernel field order. |
+| The two integer declarations | Receive values initialized and calculated by read_cpu. |
+| First condition | Report failure and return 1 if the sample cannot be parsed. |
+| Second condition | Report failure if either calculated total differs from its expected value. |
+| Final output and return | Report a successful test with exit status 0. |
+
+The first eight counters sum to 100. The idle counter 70 plus iowait counter 5 gives nonbusy 75. This is a parser test for one snapshot, distinct from the percentage calculation between two snapshots.
+
+Append the following to CMakeLists.txt, retaining the existing application and memory test targets:
+
+```cmake
+add_executable(cpu_test
+    tests/cpu_test.cpp
+    src/metrics.cpp
+)
+target_include_directories(cpu_test PRIVATE include)
+
+add_test(NAME cpu_parser COMMAND cpu_test)
+```
+
+The new target builds a separate CPU test executable against the existing implementation. Its include-directory setting resolves the shared header. The add_test statement registers cpu_parser alongside memory_parser.
+
+Run from the project root:
+
+```sh
+cmake -S . -B build
+cmake --build build
+(cd build && ctest --output-on-failure)
+```
+
+Expect two registered tests to pass. The user's screenshot demonstrates both memory_parser and cpu_parser passing. Source review confirms the known-input CPU test. Invalid labels and incomplete counter lines will be checked in a following lesson.
+
+## CPU tests lesson 3 — reject invalid input
+
+The normal CPU parser sample has passed. The next two cases are proposed additions to tests/cpu_test.cpp, before its final success message and return 0. Reuse the existing total_ticks and nonbusy_ticks variables.
+
+```cpp
+std::istringstream wrong_label("cpu0 10 0 15 70 5 0 0 0 0 0\n");
+
+if (read_cpu(wrong_label, total_ticks, nonbusy_ticks)
+    || total_ticks != -1 || nonbusy_ticks != -1) {
+    std::cerr << "FAIL: accepted an incorrect CPU label or kept old totals\n";
+    return 1;
+}
+
+std::istringstream incomplete("cpu 10 0 15\n");
+
+if (read_cpu(incomplete, total_ticks, nonbusy_ticks)
+    || total_ticks != -1 || nonbusy_ticks != -1) {
+    std::cerr << "FAIL: accepted incomplete CPU counters or kept old totals\n";
+    return 1;
+}
+```
+
+| Case | Why it matters | Expected result |
+| --- | --- | --- |
+| cpu0 label with full counters | cpu0 represents an individual CPU, while this function expects the aggregate cpu line. | false and both outputs -1. |
+| cpu label with three counters | The function needs at least the first eight numeric counters before calculating totals. | false and both outputs -1. |
+
+Each istringstream supplies a fresh sample. The condition deliberately calls read_cpu without negation because returning true for either invalid sample would fail the test. The output comparisons verify that failure leaves the reset markers in place. The test main returns 1 for an unexpected result, which CTest detects.
+
+After adding the blocks, rebuild with `cmake --build build` and run `(cd build && ctest --output-on-failure)`. CMake needs no changes. Expect the same two registered tests, with three cases inside cpu_test. These two additional cases passed in a fresh assistant build on 2026-11-25. The CPU usage percentage calculation is still separate and has not yet been automated.
+
+## CPU tests lesson 4 — make the percentage calculation testable
+
+On 2026-11-25 a fresh build passed memory_parser and cpu_parser, including all three CPU cases. The header guard now covers both declarations. Live output also succeeded. The next proposed learner edits extract the existing calculation and consistency guard.
+
+Add this definition after read_cpu in src/metrics.cpp:
+
+```cpp
+bool calculate_cpu_usage(long long elapsed_ticks,
+                         long long nonbusy_change,
+                         double& cpu_percent) {
+    cpu_percent = -1.0;
+
+    if (elapsed_ticks <= 0 || nonbusy_change < 0 || nonbusy_change > elapsed_ticks) {
+        return false;
+    }
+
+    long long busy_ticks = elapsed_ticks - nonbusy_change;
+    cpu_percent = 100.0 * busy_ticks / elapsed_ticks;
+    return true;
+}
+```
+
+Add its declaration before endif in include/sysmon/metrics.h:
+
+```cpp
+bool calculate_cpu_usage(long long elapsed_ticks,
+                         long long nonbusy_change,
+                         double& cpu_percent);
+```
+
+| Part | Meaning and reason |
+| --- | --- |
+| First two parameters | Receive copies of the already-calculated counter differences. The calculation needs no file or delay. |
+| double reference output | Let the caller receive the calculated percentage. |
+| Assignment to -1.0 | Mark the output invalid until calculation succeeds. |
+| Existing consistency condition | Reject zero or negative elapsed time and invalid nonbusy differences before division. |
+| return false | Tell the caller calculation failed. The caller chooses the error message and exit status. |
+| busy_ticks and percentage assignment | Reuse the existing arithmetic. 100.0 retains fractional percentages. |
+| return true | Report that the percentage output is ready to use. |
+
+In print_snapshot keep the two lines calculating elapsed_ticks and nonbusy_change. Replace the existing consistency check, busy_ticks calculation, and cpu_percent declaration/calculation with:
+
+```cpp
+double cpu_percent;
+
+if (!calculate_cpu_usage(elapsed_ticks, nonbusy_change, cpu_percent)) {
+    cerr << "Error: inconsistent CPU readings" << endl;
+    return 1;
+}
+```
+
+Keep the existing CPU output statement afterward. The function now owns arithmetic and its guard, while print_snapshot owns data collection, messages, and application exit behavior. CMake needs no changes because metrics.cpp is already compiled into all three targets.
+
+Build, run, and check the existing tests:
+
+```sh
+cmake --build build
+./build/sysmon
+(cd build && ctest --output-on-failure)
+```
+
+The learner implemented the extraction. Source review confirms the header declaration, definition, and application call. The user's screenshot demonstrates live output and both existing parser tests passing. Direct calculation tests are the next lesson.
+
+## CPU tests lesson 5 — known percentage and zero elapsed time
+
+The calculation function is now used by the live program. Its direct automated checks are proposed below. Add these statements to tests/cpu_test.cpp before its final success message and return 0:
+
+```cpp
+double cpu_percent;
+
+if (!calculate_cpu_usage(100, 75, cpu_percent) || cpu_percent != 25.0) {
+    std::cerr << "FAIL: expected 25 percent CPU usage\n";
+    return 1;
+}
+
+if (calculate_cpu_usage(0, 0, cpu_percent) || cpu_percent != -1.0) {
+    std::cerr << "FAIL: zero elapsed time was not rejected correctly\n";
+    return 1;
+}
+```
+
+| Statement or case | What it checks |
+| --- | --- |
+| double cpu_percent | Reserve the function's output variable. The function initializes it on each call. |
+| calculate_cpu_usage(100, 75, cpu_percent) | 100 total ticks and 75 nonbusy ticks leave 25 busy ticks, so the expected result is true with 25.0. |
+| Negated call or mismatched percentage | Fail the test if valid data is rejected or its answer is wrong. The value 25.0 is exactly representable for this sample. |
+| calculate_cpu_usage(0, 0, cpu_percent) | Expect false because division by zero must be prevented. |
+| Unnegated call or output differing from -1.0 | Fail if invalid data is accepted or if the previous 25.0 output was not reset to the failure marker. |
+| Diagnostic output and return 1 | Let CTest identify a failed test and show its diagnostic with --output-on-failure. |
+
+Change the final success message to `All CPU checks passed`. Rebuild and run:
+
+```sh
+cmake --build build
+(cd build && ctest --output-on-failure)
+```
+
+CMake needs no changes. The registered cpu_parser executable now checks parsing and calculation, so CTest will still list two tests overall. The user's screenshot now shows both registered tests passing after these cases were added. Source review confirms the direct 25% and zero-elapsed checks execute before success is returned. Negative or excessive nonbusy differences are separate cases to add afterward.
+
+## CPU tests lesson 6 — remaining nonbusy guards
+
+The direct 25% and zero-elapsed checks have passed. Add the following two cases before the final success message in tests/cpu_test.cpp. Reuse its cpu_percent variable.
+
+```cpp
+if (calculate_cpu_usage(100, -1, cpu_percent) || cpu_percent != -1.0) {
+    std::cerr << "FAIL: negative nonbusy change was not rejected\n";
+    return 1;
+}
+
+if (calculate_cpu_usage(100, 101, cpu_percent) || cpu_percent != -1.0) {
+    std::cerr << "FAIL: excessive nonbusy change was not rejected\n";
+    return 1;
+}
+```
+
+| Inputs | Guard condition exercised | Expected outputs |
+| --- | --- | --- |
+| elapsed 100, nonbusy -1 | nonbusy_change less than zero | false and cpu_percent -1.0 |
+| elapsed 100, nonbusy 101 | nonbusy_change greater than elapsed_ticks | false and cpu_percent -1.0 |
+
+Each condition fails the test if the function accepts invalid differences or does not preserve its failure marker. These checks cover the remaining nonbusy conditions in the existing guard. They require no application or CMake changes. Rebuild with `cmake --build build` and run `(cd build && ctest --output-on-failure)`. Expect two registered tests to pass. The user's screenshot now shows both registered tests passing with these additional cases present. Source review confirms they run before the final success return. After they pass, the shared CPU parser and calculation tests form the next checkpoint milestone.
+
+## CPU-testing milestone complete — 2026-11-25
+
+Source review confirms all seven CPU cases execute before cpu_test returns success. The user's screenshot reports both memory_parser and cpu_parser passing. The CPU percentage helper is shared between the live application and this test executable.
+
+| CPU check | Expected result | Evidence |
+| --- | --- | --- |
+| Known aggregate counter line | true, total 100, nonbusy 75 | Present in reviewed source and included in passing CTest run. |
+| cpu0 label | false, both outputs -1 | Present in reviewed source and included in passing CTest run. |
+| Incomplete counter line | false, both outputs -1 | Present in reviewed source and included in passing CTest run. |
+| 100 elapsed, 75 nonbusy | true, percentage 25.0 | Present in reviewed source and included in passing CTest run. |
+| Zero elapsed ticks | false, percentage -1.0 | Present in reviewed source and included in passing CTest run. |
+| Negative nonbusy difference | false, percentage -1.0 | Present in reviewed source and included in passing CTest run. |
+| Nonbusy difference greater than elapsed ticks | false, percentage -1.0 | Present in reviewed source and included in passing CTest run. |
+
+CTest lists two registered test executables. The memory executable contains its three sample cases, and the CPU executable contains the seven cases above. This milestone is ready for a checkpoint commit. Earlier lesson sections preserve the steps used to reach it.
