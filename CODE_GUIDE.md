@@ -1188,3 +1188,105 @@ Source review confirms all seven CPU cases execute before cpu_test returns succe
 | Nonbusy difference greater than elapsed ticks | false, percentage -1.0 | Present in reviewed source and included in passing CTest run. |
 
 CTest lists two registered test executables. The memory executable contains its three sample cases, and the CPU executable contains the seven cases above. This milestone is ready for a checkpoint commit. Earlier lesson sections preserve the steps used to reach it.
+
+## GitHub Actions lesson 1 — prerequisites and workflow plan
+
+Reviewed 2026-11-25. The workflow below is proposed learner work. The learner has now saved .github/workflows/ci.yml. Its contents match the workflow below. Configure, build, and test commands passed in a fresh local build; a GitHub run is still pending.
+
+### Prerequisites
+
+| Item | Purpose | Current project status |
+| --- | --- | --- |
+| GitHub repository and push access | Save the workflow and let GitHub receive triggering events. | RDagunan/sysmon-cli exists, and the user has pushed milestones successfully. |
+| Committed source, header, CMake file, and tests | A fresh runner needs the same inputs used locally. | The CPU-testing milestone is committed as 1dd032a. |
+| Passing local build and tests | Establish a baseline before investigating workflow-specific failures. | Both registered tests passed during the preceding milestone. |
+| Repository Actions enabled with the checkout action allowed | Permit GitHub to execute the workflow and retrieve the source. | Repository settings have not been inspected. If Actions is disabled, review Settings > Actions > General. |
+| Linux runner with CMake, a C++17 compiler, and a build tool | Build this Linux project. | The proposed ubuntu-24.04 hosted image includes GNU C++ and CMake. |
+
+GitHub supplies the runner and its tools. The build uses the C++ standard library and the existing CMake tests. Checkout uses GitHub's automatic workflow token with contents-read permission. No custom secret is needed for this build. Standard GitHub-hosted runner usage in a public repository is free under the current documented policy.
+
+References checked for this lesson:
+
+- [GitHub Actions concepts and workflow placement](https://docs.github.com/en/actions/get-started/understand-github-actions)
+- [Ubuntu 24.04 runner tool inventory](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2404-Readme.md)
+- [Checkout action instructions](https://github.com/actions/checkout)
+- [Checkout v7.0.1 release verified during preparation](https://github.com/actions/checkout/releases/tag/v7.0.1)
+- [GitHub Actions billing policy](https://docs.github.com/en/actions/concepts/billing-and-usage)
+
+### Setup steps
+
+1. Create .github/workflows/ci.yml in the repository root.
+2. Add the workflow below using spaces for YAML indentation.
+3. Review, commit, and push the workflow alongside any documentation updates you want included.
+4. Open the repository's Actions tab and select the Build and test run.
+5. Confirm Checkout, Configure, Build, and Test succeed. Expand the failed step's logs if a run fails.
+
+The workflow can run on a push, on a pull request, or manually from the Actions tab after it exists on the default branch.
+
+```yaml
+name: Build and test
+
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v7
+
+      - name: Configure
+        run: cmake -S . -B build
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        working-directory: build
+        run: ctest --output-on-failure
+```
+
+| YAML entry | What it does and why |
+| --- | --- |
+| name | Labels the workflow in GitHub. |
+| on | Lists the repository events that start it. push checks uploaded commits, pull_request checks proposed changes, and workflow_dispatch permits a manual run. |
+| permissions / contents: read | Give the automatic workflow token read access to source contents. |
+| jobs | Groups work into jobs. This workflow needs one job. |
+| build-and-test | A chosen identifier for the job. |
+| runs-on | Select GitHub's Ubuntu 24.04 runner image. |
+| steps | Execute the following list in order on that runner. |
+| A dash followed by name | Start a step and give it a readable label. |
+| uses | Run the official checkout action, which downloads the repository into the workspace. v7 selects its major release. |
+| Configure run | Generate build files with the same CMake command used locally. |
+| Build run | Compile the application and both test executables. |
+| working-directory: build | Run the following test command from the generated build directory. Each step otherwise starts in the checkout directory. |
+| Test run | Execute CTest and print test diagnostics when a check fails. A nonzero result causes the step and job to fail. |
+
+YAML uses indentation to show nesting. Keep two-space indentation consistent with this example. The proposed job builds the application and runs finite automated tests. Watch mode remains a manual interactive check.
+
+From the project root, the file can be created with:
+
+```sh
+mkdir -p .github/workflows
+nano .github/workflows/ci.yml
+```
+
+mkdir -p creates any missing parent directories. nano opens the new workflow file. After the learner adds the file, review its contents before the commit and first push. The workflow file has been saved and reviewed. Its commit, push, and remote run remain pending.
+
+### Workflow reviewed and ready for first push
+
+Reviewed the saved ci.yml: triggers, contents-read permission, Ubuntu runner, checkout action, and configure/build/test steps match the example. A fresh local configuration and build succeeded, and both registered tests passed. This verifies the project commands locally. The hosted runner, checkout step, and actual event trigger will be verified by the first GitHub run.
+
+To save the workflow and accompanying documentation from the project root:
+
+```sh
+git add .github/workflows/ci.yml README.md CODE_GUIDE.md SESSION_LOG.md architecture.md
+git commit -m "Add GitHub Actions build and test workflow"
+git push origin main
+```
+
+The add command stages the reviewed workflow and documentation files. The commit records them locally, and push sends the commit to GitHub, triggering this workflow. Those Git commands have not been executed in this review. After pushing, open the repository's Actions tab and inspect the Build and test run. The first hosted-run result remains pending.

@@ -49,4 +49,10 @@ read_cpu and calculate_cpu_usage are defined in src/metrics.cpp and declared in 
 
 The cpu_test executable checks a valid line, an incorrect label, an incomplete line, the 25% calculation, zero elapsed ticks, a negative nonbusy difference, and an excessive nonbusy difference. Source review confirms all seven cases run before success. The user's CTest screenshot shows memory_parser and cpu_parser passing. The application has also run successfully since the calculation extraction.
 
-The changes are ready for review and a checkpoint commit. Error propagation from actual file-open failures or a failing live snapshot in watch mode remains outside the demonstrated cases.
+The changes are committed as 1dd032a, and local main matches origin/main. Error propagation from actual file-open failures or a failing live snapshot in watch mode remains outside the demonstrated cases.
+
+## Proposed next milestone — GitHub build and test checks
+
+Use GitHub Actions to configure CMake, build the application and both test executables, and run CTest automatically on pushes and pull requests. This reuses the existing commands in a clean Linux environment and exposes failures in GitHub's Actions view.
+
+The proposed workflow file is .github/workflows/ci.yml. It will run the default build and tests; watch mode is interactive and should be checked manually. The workflow has been saved and reviewed locally. Its project commands passed a fresh local build and CTest run. Commit, push, and the first GitHub run remain pending. CODE_GUIDE.md explains the YAML structure and commands used by the saved file. See the [GitHub Actions overview](https://docs.github.com/en/actions/about-github-actions/understanding-github-actions) for workflows, events, jobs, and runners.

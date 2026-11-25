@@ -44,6 +44,10 @@ After configuring and building, run:
 
 CTest runs the registered memory_parser and cpu_parser tests, covering memory parsing, CPU parsing, and CPU percentage calculations. A nonzero test exit status reports failure. The parentheses keep the directory change local to that command.
 
+## GitHub build and test workflow
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The workflow is prepared locally; its first GitHub run has not yet been verified.
+
 ## Where things live
 
 For annotated code snippets and explanations of each step, read [CODE_GUIDE.md](CODE_GUIDE.md).

@@ -326,3 +326,19 @@ The user's screenshot shows rebuilding cpu_test and both registered tests passin
 ### CPU-testing milestone complete
 
 The user's screenshot shows rebuilding cpu_test and both CTest registrations passing with zero failures. Reviewed tests/cpu_test.cpp and confirmed three parser cases plus four calculation cases all execute before returning success. The header declares both parsers and the calculation helper inside its guard, and metrics.cpp owns their implementations. Updated README.md, CODE_GUIDE.md, architecture.md, and decisions.md. This milestone is ready for review and a commit. No source edits, commit, or push were performed in this documentation update.
+
+### Next milestone recommendation
+
+Inspected git status and git log. Commit 1dd032a saves the CPU-testing milestone, and local main matches origin/main. The working tree was clean before this documentation update. Proposed GitHub Actions automation of the existing CMake build and CTest commands. Added the proposed milestone to architecture.md. No workflow has been created or run yet.
+
+### GitHub Actions prerequisites and setup explained
+
+Inspected README.md, CMakeLists.txt, Git status, and origin. The source repository has no .github directory yet. Looked up official GitHub workflow documentation, hosted-runner billing, the Ubuntu 24.04 tool inventory, and the checkout action. The checkout repository's current README specifies v7, and its latest release endpoint reports v7.0.1. Added prerequisites, setup steps, a proposed workflow, YAML explanations, source references, and file-creation commands to CODE_GUIDE.md. Repository Actions settings have not been inspected. No workflow was created, pushed, or executed in this documentation session.
+
+### Workflow prerequisites shown in screenshots
+
+The user's GitHub settings screenshot shows Allow all actions and reusable workflows selected, which permits the planned checkout action. The screenshot does not establish whether a changed selection was saved. A second screenshot shows Nano editing .github/workflows/ci.yml as a new, empty file. The workflow example is already in CODE_GUIDE.md. Next, paste that example, save the file, and review it before committing. No workflow run is claimed.
+
+### Saved workflow reviewed locally
+
+Inspected .github/workflows/ci.yml and confirmed it matches the planned push/pull_request/workflow_dispatch triggers, contents-read permission, ubuntu-24.04 runner, checkout v7, and configure/build/test steps. Ran a fresh configuration at /tmp/sysmon-ci-check-lHWhkH, built all targets, and ran CTest from that directory. Both registered tests passed; all commands returned 0. Updated README.md, CODE_GUIDE.md, and architecture.md. Added explicit staging, commit, and push commands to the guide. No commit, push, or hosted run was performed during this review.
