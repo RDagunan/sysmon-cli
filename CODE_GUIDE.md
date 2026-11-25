@@ -1290,3 +1290,41 @@ git push origin main
 ```
 
 The add command stages the reviewed workflow and documentation files. The commit records them locally, and push sends the commit to GitHub, triggering this workflow. Those Git commands have not been executed in this review. After pushing, open the repository's Actions tab and inspect the Build and test run. The first hosted-run result remains pending.
+
+## CI milestone verified on GitHub — 2026-11-25
+
+The learner committed and pushed the workflow as f2a5630. GitHub API checks confirm both runs completed successfully at commit f2a563038b42a0bdc9453c258913c57a8cccdcb7.
+
+| Trigger | Run | Result |
+| --- | --- | --- |
+| Push | [Build and test #1](https://github.com/RDagunan/sysmon-cli/actions/runs/45570663053) | Checkout source, Configure, Build, and Test all succeeded. |
+| Manual workflow_dispatch | [Build and test #2](https://github.com/RDagunan/sysmon-cli/actions/runs/45570812709) | Checkout source, Configure, Build, and Test all succeeded. |
+| Pull request | Configured in ci.yml | Has not yet been exercised. |
+
+A green workflow result means the hosted job completed successfully. Expand its steps on the run page to see the configure output, compiler output, and test report. The push and manual triggers are verified. Earlier lesson text describing the first run as pending records the preparation stage and is superseded by this result.
+
+## Pull-request lesson — publish the CI verification notes
+
+Push-triggered and manual CI runs have passed. The next proposed exercise uses the existing documentation updates to demonstrate a pull request and its CI trigger. No application changes are needed for this exercise.
+
+From the source repository root:
+
+```sh
+git switch -c docs/ci-results
+git add README.md CODE_GUIDE.md SESSION_LOG.md architecture.md
+git commit -m "Document successful GitHub CI runs"
+git push -u origin docs/ci-results
+```
+
+| Command | What it does |
+| --- | --- |
+| git switch -c docs/ci-results | Create and switch to a new branch. The current uncommitted documentation edits remain available on that branch. |
+| git add with the four paths | Stage the CI result documentation and this lesson. |
+| git commit | Save the staged documentation as a local commit on the branch. |
+| git push -u origin docs/ci-results | Publish the branch and set its upstream. This also triggers the workflow's push event. |
+
+On GitHub, create a pull request with base main and compare docs/ci-results. A suitable title is Document successful GitHub CI runs. The description can explain that it records the successful push and manual runs, updates the project status, and documents the pull-request learning exercise.
+
+A branch is a named line of commits. A pull request proposes merging one branch into another and provides a place to review the diff and automated checks. Opening it triggers the workflow's pull_request event. Expect both push and pull-request runs for this branch. A green push run alone does not establish that the pull-request event ran.
+
+After opening the pull request, inspect its Checks section and the Actions page. Confirm the Build and test workflow completed successfully for the pull-request event. Branch creation, commit, push, pull request, and its CI outcome are pending for this exercise. The lesson ends with a reviewable pull request. Merging will be a separate step after reviewing the diff and results.

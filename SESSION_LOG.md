@@ -342,3 +342,11 @@ The user's GitHub settings screenshot shows Allow all actions and reusable workf
 ### Saved workflow reviewed locally
 
 Inspected .github/workflows/ci.yml and confirmed it matches the planned push/pull_request/workflow_dispatch triggers, contents-read permission, ubuntu-24.04 runner, checkout v7, and configure/build/test steps. Ran a fresh configuration at /tmp/sysmon-ci-check-lHWhkH, built all targets, and ran CTest from that directory. Both registered tests passed; all commands returned 0. Updated README.md, CODE_GUIDE.md, and architecture.md. Added explicit staging, commit, and push commands to the guide. No commit, push, or hosted run was performed during this review.
+
+### GitHub build and test workflow verified
+
+The user's screenshot shows two green workflow runs. Independently checked GitHub's run and job APIs: push run 45570663053 and manual run 45570812709 both completed with success at f2a563038b42a0bdc9453c258913c57a8cccdcb7. Each job's Checkout source, Configure, Build, and Test steps succeeded. Local main matches origin/main, and the working tree was clean before this documentation update. Updated README.md, CODE_GUIDE.md, and architecture.md with run links and completion status. The pull-request trigger is configured but not exercised. No additional workflow run, commit, or push was started by the assistant.
+
+### Pull-request learning exercise proposed
+
+Checked the current code, CMake, Git status, and roadmap. The only local modifications are documentation updates for the verified CI milestone. The docs/ci-results branch does not yet exist. Added a lesson for creating that branch, committing the four documentation files, pushing, opening a pull request into main, and checking its pull_request workflow run. No branch was created, and no commit, push, or pull request was performed by the assistant in this update.

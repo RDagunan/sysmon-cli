@@ -51,8 +51,12 @@ The cpu_test executable checks a valid line, an incorrect label, an incomplete l
 
 The changes are committed as 1dd032a, and local main matches origin/main. Error propagation from actual file-open failures or a failing live snapshot in watch mode remains outside the demonstrated cases.
 
-## Proposed next milestone — GitHub build and test checks
+## GitHub build and test checks — complete
 
 Use GitHub Actions to configure CMake, build the application and both test executables, and run CTest automatically on pushes and pull requests. This reuses the existing commands in a clean Linux environment and exposes failures in GitHub's Actions view.
 
-The proposed workflow file is .github/workflows/ci.yml. It will run the default build and tests; watch mode is interactive and should be checked manually. The workflow has been saved and reviewed locally. Its project commands passed a fresh local build and CTest run. Commit, push, and the first GitHub run remain pending. CODE_GUIDE.md explains the YAML structure and commands used by the saved file. See the [GitHub Actions overview](https://docs.github.com/en/actions/about-github-actions/understanding-github-actions) for workflows, events, jobs, and runners.
+The proposed workflow file is .github/workflows/ci.yml. It will run the default build and tests; watch mode is interactive and should be checked manually. The workflow is committed as f2a5630. Both its push-triggered and manual runs succeeded on GitHub. Checkout, Configure, Build, and Test passed in each run. The pull-request trigger is configured but has not been exercised. CODE_GUIDE.md explains the YAML structure and commands used by the saved file. See the [GitHub Actions overview](https://docs.github.com/en/actions/about-github-actions/understanding-github-actions) for workflows, events, jobs, and runners.
+
+## Proposed next lesson — branch and pull-request workflow
+
+Use the locally saved CI verification documentation for a docs/ci-results branch. Commit and publish it, then open a pull request into main. This demonstrates the remaining pull_request CI trigger and introduces branch-based review. The branch, pull request, and its hosted result are pending. Detailed commands are in CODE_GUIDE.md.
