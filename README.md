@@ -46,7 +46,7 @@ CTest runs the registered memory_parser and cpu_parser tests, covering memory pa
 
 ## GitHub build and test workflow
 
-[.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The workflow is prepared locally; its first GitHub run has not yet been verified.
+[.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The push-triggered and manual runs for commit f2a5630 both passed Checkout, Configure, Build, and Test. See the [verified push run](https://github.com/RDagunan/sysmon-cli/actions/runs/45570663053).
 
 ## Where things live
 
