@@ -1437,3 +1437,37 @@ The command-line checks used bounded temporary subprocess calls and did not add 
 Two suggested style tidy-ups before the next commit are to write the standard header as `#include <iomanip>` and indent the help branch's return 0 and output continuations consistently. Quotes around iomanip compiled successfully here; angle brackets express its standard-library role.
 
 The next steps are to commit and push the finishing source and documentation changes, inspect their CI result, then tag a first release after the final commit is verified. A proposed tag name is v0.1.0. No release tag has been created yet.
+
+## Final build review — 2026-11-26
+
+Reviewed the pushed commit 96aa51c5fd0ebeb4ea8dca474beee5d52da23ed4 and the current checkout. GitHub main matches that commit. The only source difference at review time is a local indentation correction to the help branch's return 0. No source edits were made by the assistant.
+
+| Review area | Evidence and result |
+| --- | --- |
+| CMake targets | sysmon, metrics_test, and cpu_test each have one entry point and compile the shared metrics.cpp implementation. |
+| Header and caller connections | The guard encloses declarations for both parsers and the calculation helper; application and tests use that shared API. |
+| Fresh Release build | Configured /tmp/sysmon-final-audit-QVODKD with Release mode and temporary -Wall -Wextra -Wpedantic flags. All targets built without warnings. These flags were not added to the repository. |
+| Automated tests | memory_parser and cpu_parser passed. They cover the three memory cases and seven CPU cases recorded earlier. |
+| Default live run | Exit 0; uptime was within the surrounding /proc/uptime readings; total MiB matched MemTotal divided by 1024; available MiB was within total RAM; CPU displayed two decimals between 0 and 100. |
+| Help | Exit 0, expected help text, and no measurement lines. |
+| Invalid arguments | Unknown option and three excess-argument combinations returned 1 and usage on stderr. |
+| Watch | Repeated complete snapshots with two-decimal CPU output during a four-second run, then stopped on SIGINT. |
+| Documentation | Code fences balanced and relative file links resolved. |
+| Git hygiene | Generated build directory is ignored and not tracked. Git whitespace check passed. |
+| Pushed CI | [Run for 96aa51c](https://github.com/RDagunan/sysmon-cli/actions/runs/45755811825) passed Checkout source, Configure, Build, and Test. |
+
+No release-blocking defect was found in the reviewed normal Linux behavior. The shared parsers assume kernel-style inputs and integer values fitting their storage types. Uptime's int conversion has the range limitation already discussed in this guide. Arbitrary malformed or overflowing inputs are not exhaustively validated. Actual file-open failures and a live snapshot failure during watch mode were not simulated. CI currently runs the parser/calculation tests; this review's CLI checks were temporary local checks rather than added CTest registrations.
+
+The pushed source contains the help command and CPU formatting. The corrected indentation of the help return remains local and uncommitted. The documentation recording this review is also local until committed. No tag, release, commit, or push was performed during the review.
+
+## Save the reviewed release candidate
+
+The build review passed. The pending files are the help return's indentation correction and four documentation updates. From the project root, save and publish them with:
+
+```sh
+git add src/main.cpp README.md CODE_GUIDE.md SESSION_LOG.md architecture.md
+git commit -m "Finalize release review and documentation"
+git push origin main
+```
+
+The staging command selects the five reviewed files. The commit saves that state, and the push publishes it and triggers CI. These commands are proposed for the learner and have not been executed in this step. After the push, verify the CI result for the new commit. A first version tag such as v0.1.0 and release notes follow as a separate release step. No tag or release exists yet according to the prior local inspection.

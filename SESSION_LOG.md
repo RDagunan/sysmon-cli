@@ -372,3 +372,13 @@ Reviewed the saved early help branch and updated usage error. The user screensho
 ### Formatting and final local release checks passed
 
 Inspected source and found the two-decimal CPU output in place, plus the help branch. The iomanip include uses quotes, and the help return and output continuations still need indentation cleanup for consistency. Configured /tmp/sysmon-release-check-z2TGyj with CMAKE_BUILD_TYPE=Release, built all targets, and ran CTest: both tests passed. Bounded subprocess checks confirmed default output/status 0, help output/status 0, unknown and excess arguments/status 1, and multiple watch snapshots with two-decimal CPU output followed by SIGINT interruption. Git diff whitespace checks passed. git tag --list returned no local tags. Updated the README sample and recorded the finishing status in the guide and roadmap. Commit, push, CI for the final changes, and a version tag remain pending. No source edits, commits, or tags were made by the assistant.
+
+### Requested full build review completed
+
+The user requested review before any release action. Checked source, CMake, tests, workflow, docs, Git status, tracked files, and remote CI. GitHub main is 96aa51c5fd0ebeb4ea8dca474beee5d52da23ed4. Its run 45755811825 completed successfully with Checkout, Configure, Build, and Test passing. The checkout differs only by indentation of the help branch's return 0 before this documentation update.
+
+Configured a fresh Release build at /tmp/sysmon-final-audit-QVODKD with temporary -Wall -Wextra -Wpedantic flags, built all targets with no warnings, and ran CTest with both registrations passing. Bounded subprocess checks verified default measurements, uptime against surrounding /proc readings, total RAM against MemTotal, output ranges/precision, help/status 0, four invalid/excess option cases/status 1, and repeated watch output followed by SIGINT. Checked documentation fences and relative file links and confirmed build/ is ignored. All audit commands succeeded. No release-blocking defect was found in the exercised Linux behavior. File-open failure paths and exhaustive malformed/overflowing input handling were not tested. The CLI checks were temporary, not persistent CI tests. Updated documentation only; no source edits, commits, pushes, tags, or releases were performed.
+
+### Next release-candidate checkpoint explained
+
+The user asked for the next step after review. Rechecked Git status and whitespace checks: the five expected source/documentation files remain modified and HEAD is 96aa51c. Added explicit staging, commit, and push instructions to CODE_GUIDE.md. The next hosted CI result and the proposed first version tag remain pending. No commit, push, tag, or release was performed by the assistant.

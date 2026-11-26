@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
         << "  --help   Show this help and exit.\n"
         << "\nRun without options to print one snapshot.\n";
 
-    return 0;
+        return 0;
     }
 
     bool watch_mode = false;

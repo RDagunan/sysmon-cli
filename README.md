@@ -52,6 +52,8 @@ CTest runs the registered memory_parser and cpu_parser tests, covering memory pa
 
 [.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The push-triggered and manual runs for commit f2a5630 both passed Checkout, Configure, Build, and Test. The [pull-request run](https://github.com/RDagunan/sysmon-cli/actions/runs/45574628586) and [merged-main run](https://github.com/RDagunan/sysmon-cli/actions/runs/45574902968) also passed.
 
+The latest reviewed commit, `96aa51c`, also passed its [GitHub build and test run](https://github.com/RDagunan/sysmon-cli/actions/runs/45755811825). Final local CLI verification is recorded in CODE_GUIDE.md.
+
 ## Where things live
 
 For annotated code snippets and explanations of each step, read [CODE_GUIDE.md](CODE_GUIDE.md).
