@@ -1328,3 +1328,112 @@ On GitHub, create a pull request with base main and compare docs/ci-results. A s
 A branch is a named line of commits. A pull request proposes merging one branch into another and provides a place to review the diff and automated checks. Opening it triggers the workflow's pull_request event. Expect both push and pull-request runs for this branch. A green push run alone does not establish that the pull-request event ran.
 
 After opening the pull request, inspect its Checks section and the Actions page. Confirm the Build and test workflow completed successfully for the pull-request event. Branch creation, commit, push, pull request, and its CI outcome are pending for this exercise. The lesson ends with a reviewable pull request. Merging will be a separate step after reviewing the diff and results.
+
+## Pull-request exercise completed — 2026-11-25
+
+The learner opened [PR #1](https://github.com/RDagunan/sysmon-cli/pull/1) from docs/ci-results into main. The reviewed diff contained four documentation files and no blocking issues. GitHub reported it mergeable. The [pull-request CI run](https://github.com/RDagunan/sysmon-cli/actions/runs/45574628586) passed Checkout, Configure, Build, and Test.
+
+The learner merged the PR as 1acf37d6816d50ce5cd006a05e3a90c3fc188707. GitHub's [push run for the merged main](https://github.com/RDagunan/sysmon-cli/actions/runs/45574902968) also passed all four steps. This verifies push, manual, and pull-request CI triggers during the project exercises.
+
+To sync the local application checkout, the assistant executed:
+
+```sh
+git switch main
+git pull --ff-only origin main
+```
+
+The first command selected the existing local main branch. The second downloaded origin/main and advanced the local branch to the merge commit without creating another merge. The fast-forward succeeded. These commands are verified execution, and the documentation update recording them remains uncommitted. Earlier lesson statements marking PR creation or CI as pending describe the preparation stage.
+
+## First-release lesson — add --help
+
+Reviewed the source on 2026-11-26. main currently recognizes only --watch. The following is proposed learner code. Add this block at the start of main, before bool watch_mode:
+
+```cpp
+if (argc == 2 && string(argv[1]) == "--help") {
+    cout << "SysMon CLI - Linux system monitor\n\n"
+         << "Usage: sysmon [--watch | --help]\n\n"
+         << "Options:\n"
+         << "  --watch  Repeat readings until Ctrl+C.\n"
+         << "  --help   Show this help and exit.\n"
+         << "\nRun without options to print one snapshot.\n";
+    return 0;
+}
+```
+
+Also update the existing invalid-argument message in main:
+
+```cpp
+cerr << "Usage: sysmon [--watch | --help]" << endl;
+```
+
+| Code | Meaning and reason |
+| --- | --- |
+| argc == 2 | Require the program name plus exactly one option before reading argv[1]. |
+| string(argv[1]) == "--help" | Compare the supplied option with the help flag. |
+| Logical AND between the conditions | Only examine argv[1] after confirming it exists. |
+| Chained cout statements | Send a short description, usage, and supported options to standard output. |
+| Newline escapes | Format the help text into lines. Two consecutive newlines leave an empty line. |
+| return 0 | Exit main successfully after showing help, before collecting any measurements or entering watch mode. |
+| Updated usage error | Make the diagnostic reflect both supported options. |
+
+The usage message uses square brackets for an optional argument and a vertical bar to indicate choosing one of the options. The current parser accepts one option per invocation. An invocation with extra options remains an error.
+
+Build and check help:
+
+```sh
+cmake --build build && ./build/sysmon --help
+echo $?
+```
+
+Expect help text and exit status 0. Uptime, memory, and CPU measurements should not print for --help. Those effects remain pending until the edit is made and run. After confirmation, check the default run, --watch, and an unknown option to verify existing behavior. The source code has not been edited by the assistant for this lesson.
+
+## Help command verified — 2026-11-26
+
+The user's screenshot demonstrates help output and exit status 0. Source review confirms the early --help branch and updated invalid-argument usage message. The first failed command used /build/sysmon, an absolute path from the filesystem root. The corrected ./build/sysmon uses the current project directory.
+
+A fresh assistant build passed both CTest registrations. Additional command checks confirmed --help returns 0 and prints help without measurements, the default invocation returns 0 and prints all three measurements, and --oops returns 1 with usage on standard error. Watch mode was not rerun in this review. The body of the help if block should be indented one level deeper for consistency.
+
+## First-release lesson — consistent CPU precision
+
+This is the next proposed learner edit. Add this include near the other headers in src/main.cpp:
+
+```cpp
+#include <iomanip>
+```
+
+Replace the current CPU output statement with:
+
+```cpp
+cout << "CPU usage: " << fixed << setprecision(2)
+     << cpu_percent << "%" << endl;
+```
+
+| Part | What it does and why |
+| --- | --- |
+| iomanip include | Supplies setprecision for controlling output formatting. |
+| fixed | Select fixed-point formatting so precision counts digits after the decimal point. |
+| setprecision(2) | Print two digits after the decimal point, rounding the displayed value. |
+| cpu_percent | Print the existing calculated percentage with that formatting. |
+| Percent text and endl | Add the unit and finish the line. |
+
+For example, 1.50094 displays as 1.50 and 0 displays as 0.00. The stored number and calculation are unchanged by the output formatting. The formatting settings remain on cout for later floating-point output. Current uptime and memory outputs use integers, so they retain their current format during watch mode.
+
+Rebuild and run with `cmake --build build && ./build/sysmon`. Expect exactly two digits after the decimal point on the CPU line. Results for this proposed change remain pending.
+
+## Final local release checks — 2026-11-26
+
+The learner added fixed and setprecision(2). The stored calculation stays unchanged while output now has two decimal places. A fresh assistant Release build at /tmp/sysmon-release-check-z2TGyj compiled all targets and passed both CTest registrations.
+
+| Check executed against the fresh executable | Observed result |
+| --- | --- |
+| Default invocation | All three measurement lines and exit 0; CPU line has two decimal places. |
+| --help | Help text without measurement lines and exit 0. |
+| --oops | Usage on standard error and exit 1. |
+| --watch --help | Usage on standard error and exit 1 for excess arguments. |
+| --watch for four seconds, then SIGINT | Multiple complete snapshots, two-decimal CPU values, interrupted process. |
+
+The command-line checks used bounded temporary subprocess calls and did not add a new repository test target. The existing CTest tests remain the parser/calculation checks. The local verification passed; hosted CI for these uncommitted finishing edits remains pending.
+
+Two suggested style tidy-ups before the next commit are to write the standard header as `#include <iomanip>` and indent the help branch's return 0 and output continuations consistently. Quotes around iomanip compiled successfully here; angle brackets express its standard-library role.
+
+The next steps are to commit and push the finishing source and documentation changes, inspect their CI result, then tag a first release after the final commit is verified. A proposed tag name is v0.1.0. No release tag has been created yet.

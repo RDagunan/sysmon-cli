@@ -17,12 +17,16 @@ The first command prepares the build directory. After editing a source file, rep
 ```text
 System uptime: 0h:23m:53s
 Memory: 26286 MiB available / 32013 MiB total
-CPU usage: 1.50094%
+CPU usage: 1.50%
 ```
 
 The memory values come from the `MemAvailable` and `MemTotal` fields. They are displayed in MiB, and available memory may change between runs.
 
-CPU usage appears after a pause of about one second between two reads. It reports the busy fraction across all CPUs over that interval, treating idle plus iowait as nonbusy. Values vary with system activity.
+CPU usage appears after a pause of about one second between two reads. It reports the busy fraction across all CPUs over that interval, treating idle plus iowait as nonbusy. CPU percentages display two decimal places. Values vary with system activity.
+
+## Help
+
+Run `./build/sysmon --help` to see usage and supported options. Help prints immediately and exits successfully without collecting measurements.
 
 ## Watch mode
 
@@ -32,7 +36,7 @@ Run repeated measurements with:
 ./build/sysmon --watch
 ```
 
-Each snapshot is appended to the terminal. The existing CPU sampling pause paces updates at roughly one snapshot per second plus processing time. Press Ctrl+C to stop. Running without arguments prints one snapshot. Unknown or extra arguments print `Usage: sysmon [--watch]` and exit with status 1.
+Each snapshot is appended to the terminal. The existing CPU sampling pause paces updates at roughly one snapshot per second plus processing time. Press Ctrl+C to stop. Running without arguments prints one snapshot. Unknown or extra arguments print `Usage: sysmon [--watch | --help]` and exit with status 1.
 
 ## Run the tests
 
@@ -46,7 +50,7 @@ CTest runs the registered memory_parser and cpu_parser tests, covering memory pa
 
 ## GitHub build and test workflow
 
-[.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The push-triggered and manual runs for commit f2a5630 both passed Checkout, Configure, Build, and Test. See the [verified push run](https://github.com/RDagunan/sysmon-cli/actions/runs/45570663053).
+[.github/workflows/ci.yml](.github/workflows/ci.yml) configures a clean Ubuntu build and CTest run on pushes and pull requests, with a manual trigger available too. View results in the repository's Actions tab. The push-triggered and manual runs for commit f2a5630 both passed Checkout, Configure, Build, and Test. The [pull-request run](https://github.com/RDagunan/sysmon-cli/actions/runs/45574628586) and [merged-main run](https://github.com/RDagunan/sysmon-cli/actions/runs/45574902968) also passed.
 
 ## Where things live
 

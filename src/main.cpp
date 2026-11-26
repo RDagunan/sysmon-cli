@@ -5,6 +5,7 @@
 #include <chrono>
 #include <thread>
 #include "sysmon/metrics.h"
+#include <iomanip>
 
 using namespace std;
 
@@ -105,18 +106,31 @@ int print_snapshot() {
         return 1;
     }
 
-    cout << "CPU usage: " << cpu_percent << "%" << endl;
+    cout << "CPU usage: " << fixed << setprecision(2)
+     << cpu_percent << "%" << endl;
 
     return 0;
 }
 
 int main(int argc, char* argv[]) {
+
+    if (argc == 2 && string(argv[1]) == "--help") {
+        cout << "SysMon CLI - Linux system monitor\n\n"
+        << "Usage: sysmon [--watch | --help]\n\n"
+        << "Options:\n"
+        << "  --watch  Repeat readings until Ctrl+C.\n"
+        << "  --help   Show this help and exit.\n"
+        << "\nRun without options to print one snapshot.\n";
+
+    return 0;
+    }
+
     bool watch_mode = false;
 
     if (argc == 2 && string(argv[1]) == "--watch") {
         watch_mode = true;
     } else if (argc != 1) {
-        cerr << "Usage: sysmon [--watch]" << endl;
+        cerr << "Usage: sysmon [--watch | --help]" << endl;
         return 1;
     }
 

@@ -350,3 +350,25 @@ The user's screenshot shows two green workflow runs. Independently checked GitHu
 ### Pull-request learning exercise proposed
 
 Checked the current code, CMake, Git status, and roadmap. The only local modifications are documentation updates for the verified CI milestone. The docs/ci-results branch does not yet exist. Added a lesson for creating that branch, committing the four documentation files, pushing, opening a pull request into main, and checking its pull_request workflow run. No branch was created, and no commit, push, or pull request was performed by the assistant in this update.
+
+### Pull request reviewed, merged, and synced
+
+Reviewed PR #1 through GitHub's API: four documentation files, no blocking review findings, mergeable. Pull-request run 45574628586 completed successfully with Checkout, Configure, Build, and Test passing. The user then reported merging. GitHub confirms merged=true, merge commit 1acf37d6816d50ce5cd006a05e3a90c3fc188707, and merge timestamp 2026-11-25 08:16:51 UTC (16:16:51 Asia/Manila). The push run for merged main, 45574902968, also passed each build-and-test step.
+
+With a clean checkout on docs/ci-results, executed git switch main and git pull --ff-only origin main. Local main fast-forwarded from f2a5630 to 1acf37d. Updated README.md, CODE_GUIDE.md, and architecture.md to record the completed exercise and run links. No branch deletion or additional commit or push was performed. These documentation updates are local and uncommitted.
+
+### Completion estimate and finishing scope proposed
+
+The user asked what comes next and how close the project is to completion. Reviewed current source, roadmap, README, and Git status. Core functional milestones through merged pull-request CI are complete. Proposed roughly 90% toward a polished first release with the current functionality, explicitly a subjective estimate with a newly proposed finishing scope. Added --help, consistent CPU precision, final verification/documentation review, and a release checkpoint to architecture.md. These are recommendations, not previously adopted requirements. No source edits were made.
+
+## Session — 2026-11-26 — Help command lesson
+
+Resumed the proposed first-release finishing plan. Read the current README, instructions, CMake configuration, main argument parser, Git status, and roadmap. The parser recognizes only --watch. Added a lesson to CODE_GUIDE.md for an early --help branch and an updated usage-error message. The user will make the source edits. Compilation, help output, status 0, and existing-mode regression checks remain pending. No source edits or Git commits were performed by the assistant.
+
+### Help command verified; formatting lesson proposed
+
+Reviewed the saved early help branch and updated usage error. The user screenshot shows --help text and echo $? reporting 0 after correcting /build/sysmon to ./build/sysmon. Configured /tmp/sysmon-help-review-ZtnYAm from the source repository, built all targets, and ran CTest: both tests passed. Checked the fresh executable's --help, default, and --oops modes with bounded subprocess calls: exit statuses were 0, 0, and 1, with the expected help, measurements, and usage-error output. Watch mode was not rerun. Updated README.md and architecture.md and added the two-decimal CPU formatting lesson to CODE_GUIDE.md. Source formatting edits remain for the learner, including indentation of the help block. No source changes or commits were made by the assistant.
+
+### Formatting and final local release checks passed
+
+Inspected source and found the two-decimal CPU output in place, plus the help branch. The iomanip include uses quotes, and the help return and output continuations still need indentation cleanup for consistency. Configured /tmp/sysmon-release-check-z2TGyj with CMAKE_BUILD_TYPE=Release, built all targets, and ran CTest: both tests passed. Bounded subprocess checks confirmed default output/status 0, help output/status 0, unknown and excess arguments/status 1, and multiple watch snapshots with two-decimal CPU output followed by SIGINT interruption. Git diff whitespace checks passed. git tag --list returned no local tags. Updated the README sample and recorded the finishing status in the guide and roadmap. Commit, push, CI for the final changes, and a version tag remain pending. No source edits, commits, or tags were made by the assistant.

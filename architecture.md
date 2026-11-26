@@ -55,8 +55,32 @@ The changes are committed as 1dd032a, and local main matches origin/main. Error 
 
 Use GitHub Actions to configure CMake, build the application and both test executables, and run CTest automatically on pushes and pull requests. This reuses the existing commands in a clean Linux environment and exposes failures in GitHub's Actions view.
 
-The proposed workflow file is .github/workflows/ci.yml. It will run the default build and tests; watch mode is interactive and should be checked manually. The workflow is committed as f2a5630. Both its push-triggered and manual runs succeeded on GitHub. Checkout, Configure, Build, and Test passed in each run. The pull-request trigger is configured but has not been exercised. CODE_GUIDE.md explains the YAML structure and commands used by the saved file. See the [GitHub Actions overview](https://docs.github.com/en/actions/about-github-actions/understanding-github-actions) for workflows, events, jobs, and runners.
+The proposed workflow file is .github/workflows/ci.yml. It will run the default build and tests; watch mode is interactive and should be checked manually. The workflow is committed as f2a5630. Both its push-triggered and manual runs succeeded on GitHub. Checkout, Configure, Build, and Test passed in each run. The pull-request trigger passed for PR #1, and the push run for merge commit 1acf37d also passed. CODE_GUIDE.md explains the YAML structure and commands used by the saved file. See the [GitHub Actions overview](https://docs.github.com/en/actions/about-github-actions/understanding-github-actions) for workflows, events, jobs, and runners.
 
-## Proposed next lesson — branch and pull-request workflow
+## Branch and pull-request workflow — complete
 
-Use the locally saved CI verification documentation for a docs/ci-results branch. Commit and publish it, then open a pull request into main. This demonstrates the remaining pull_request CI trigger and introduces branch-based review. The branch, pull request, and its hosted result are pending. Detailed commands are in CODE_GUIDE.md.
+The learner published docs/ci-results and opened PR #1 into main. Review found no blocking issues, the pull-request job passed, and the learner merged it as 1acf37d. The resulting main push job passed too. Local main was fast-forwarded to the merge commit. CODE_GUIDE.md records the commands, run links, and outcomes.
+
+## Proposed first-release finishing plan — 2026-11-25
+
+The implemented scope now includes uptime, memory, CPU usage, watch mode, automated parser/calculation tests, and verified GitHub CI. All documented functional milestones through the pull-request exercise are complete.
+
+For a polished first release with those features, the assistant estimates roughly 90% completion. This is a planning judgment, not a measured ratio of tasks or a guarantee of remaining effort. The following finishing scope is proposed rather than previously agreed release requirements.
+
+| Area | Current state |
+| --- | --- |
+| Linux measurements and watch mode | Implemented and exercised. |
+| Automated memory and CPU checks | Passing locally and in CI. |
+| GitHub workflow and pull-request exercise | Verified on push, manual, and pull-request events. |
+| --help command | Implemented; help output and status 0 verified. |
+| Consistent CPU display precision | Implemented and verified in single and watch modes. |
+| Final clean build, tests, CLI checks, and documentation review | Fresh Release build, tests, and CLI checks passed locally; final commit CI remains pending. |
+| Release tag and notes | Proposed final checkpoint after verification. |
+
+Start with --help so a user can discover commands from the terminal. Then choose the CPU display precision, review the finished behavior and docs, and save a first release checkpoint. Larger additions such as configurable intervals or extra measurements can be considered after this release scope is settled.
+
+## Release candidate locally verified — 2026-11-26
+
+A fresh Release-mode build passed both tests and the default, help, invalid-argument, excess-argument, and watch-mode checks. CPU output consistently has two decimal places. Watch repeated complete snapshots and stopped on SIGINT. Two suggested style tidy-ups remain: use angle brackets for iomanip and indent the help body consistently.
+
+Next, commit and push the finishing changes, verify their GitHub CI run, then create a first version tag such as v0.1.0 and release notes. The tag name is a proposal. No tag or release has been created. The initial inspection found no existing local tags.
